@@ -51,7 +51,28 @@ const Login = () => {
             </div>
           </div>
           <div className="auth-logo">{settings.websiteName}</div>
-          <div className="auth-subtitle">{settings.websiteDescription}</div>
+          {localStorage.getItem('tenantId') && localStorage.getItem('tenantId') !== 'default-tenant' && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6px' }}>
+              <span className="workspace-badge" style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(99, 102, 241, 0.08)',
+                color: 'var(--accent-color)',
+                fontSize: '12px',
+                fontWeight: 700,
+                padding: '4px 12px',
+                borderRadius: '100px',
+                border: '1px solid rgba(99, 102, 241, 0.20)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-color)' }}></span>
+                {localStorage.getItem('tenantId')} Workspace
+              </span>
+            </div>
+          )}
+          <div className="auth-subtitle" style={{ marginTop: '10px' }}>{settings.websiteDescription}</div>
         </div>
 
         <form onSubmit={handleSubmit}>

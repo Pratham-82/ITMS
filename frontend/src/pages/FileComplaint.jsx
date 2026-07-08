@@ -55,7 +55,10 @@ const FileComplaint = () => {
     const fetchAssets = async () => {
       try {
         const res = await fetch('/api/assets?limit=100', {
-          headers: { Authorization: `Bearer ${user.token}` }
+          headers: { 
+            Authorization: `Bearer ${user.token}`,
+            'X-Tenant-Id': localStorage.getItem('tenantId') || 'default-tenant'
+          }
         });
         const json = await res.json();
         if (json.success) {
@@ -120,7 +123,10 @@ const FileComplaint = () => {
     const fetchTicketTypes = async () => {
       try {
         const res = await fetch('/api/tickets/types', {
-          headers: { Authorization: `Bearer ${user.token}` }
+          headers: { 
+            Authorization: `Bearer ${user.token}`,
+            'X-Tenant-Id': localStorage.getItem('tenantId') || 'default-tenant'
+          }
         });
         const json = await res.json();
         if (json.success) {
@@ -145,7 +151,12 @@ const FileComplaint = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const deptRes = await fetch('/api/departments', { headers: { Authorization: `Bearer ${user.token}` } });
+        const deptRes = await fetch('/api/departments', { 
+          headers: { 
+            Authorization: `Bearer ${user.token}`,
+            'X-Tenant-Id': localStorage.getItem('tenantId') || 'default-tenant'
+          } 
+        });
         const deptJson = await deptRes.json();
 
         if (deptJson.success) {
@@ -213,7 +224,8 @@ const FileComplaint = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${user.token}`
+            Authorization: `Bearer ${user.token}`,
+            'X-Tenant-Id': localStorage.getItem('tenantId') || 'default-tenant'
           },
           body: JSON.stringify({ title, description })
         });
@@ -342,7 +354,8 @@ const FileComplaint = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${user.token}`
+            Authorization: `Bearer ${user.token}`,
+            'X-Tenant-Id': localStorage.getItem('tenantId') || 'default-tenant'
           },
           body: JSON.stringify({
             title,
@@ -581,7 +594,8 @@ const FileComplaint = () => {
       const response = await fetch('/api/tickets', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${user.token}`
+          Authorization: `Bearer ${user.token}`,
+          'X-Tenant-Id': localStorage.getItem('tenantId') || 'default-tenant'
         },
         body: formData
       });
@@ -1339,7 +1353,8 @@ const FileComplaint = () => {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${user.token}`
+                        Authorization: `Bearer ${user.token}`,
+                        'X-Tenant-Id': localStorage.getItem('tenantId') || 'default-tenant'
                       },
                       body: JSON.stringify({ remarks: joinRemarks })
                     });

@@ -37,6 +37,11 @@ const Login = () => {
     }
   };
 
+  const handleResetTenant = () => {
+    localStorage.removeItem('tenantId');
+    window.location.href = '/login';
+  };
+
   return (
     <div className="auth-container">
       <div className="auth-card">
@@ -125,6 +130,18 @@ const Login = () => {
             Need a custom workspace?{' '}
             <Link to="/register-tenant" className="auth-link">Create Portal</Link>
           </div>
+          {localStorage.getItem('tenantId') && localStorage.getItem('tenantId') !== 'default-tenant' && (
+            <div style={{ marginTop: '4px' }}>
+              Want to switch?{' '}
+              <button 
+                onClick={handleResetTenant} 
+                className="auth-link" 
+                style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'var(--accent-color)', cursor: 'pointer', textDecoration: 'underline', fontWeight: 600 }}
+              >
+                Go to Main Portal
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

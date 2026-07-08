@@ -16,6 +16,13 @@ export const SettingsProvider = ({ children }) => {
 
   const fetchSettings = async () => {
     try {
+      // Extract tenant parameters from URL query if present
+      const params = new URLSearchParams(window.location.search);
+      const queryTenant = params.get('tenant') || params.get('tenantId');
+      if (queryTenant) {
+        localStorage.setItem('tenantId', queryTenant.toLowerCase());
+      }
+
       const headers = {};
       const savedTenantId = localStorage.getItem('tenantId');
       if (savedTenantId) {

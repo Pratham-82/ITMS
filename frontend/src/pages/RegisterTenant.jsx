@@ -33,7 +33,12 @@ const RegisterTenant = () => {
       return `http://${sub}.localhost${port}`;
     }
     
-    // Fallback for production base domain
+    // Check if running on Render default domain which does not support wildcard subdomains
+    if (hostname.endsWith('.onrender.com')) {
+      return `https://${hostname}${port}/login?tenant=${sub}`;
+    }
+    
+    // Fallback for production custom domains (with wildcard DNS routing)
     const mainDomain = hostname.startsWith('www.') ? hostname.substring(4) : hostname;
     return `https://${sub}.${mainDomain}${port}`;
   };

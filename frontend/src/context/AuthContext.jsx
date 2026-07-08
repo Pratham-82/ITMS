@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkLoggedIn = async () => {
       const token = localStorage.getItem('token');
+      const tenantId = localStorage.getItem('tenantId') || 'default-tenant';
       if (!token) {
         setLoading(false);
         return;
@@ -18,7 +19,8 @@ export const AuthProvider = ({ children }) => {
       try {
         const response = await fetch('/api/auth/me', {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            'X-Tenant-Id': tenantId
           }
         });
         
@@ -46,10 +48,12 @@ export const AuthProvider = ({ children }) => {
 
   // Login User
   const login = useCallback(async (email, password) => {
+    const tenantId = localStorage.getItem('tenantId') || 'default-tenant';
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Tenant-Id': tenantId
       },
       body: JSON.stringify({ email, password })
     });
@@ -68,10 +72,12 @@ export const AuthProvider = ({ children }) => {
 
   // Register User
   const register = useCallback(async (name, email, password, department) => {
+    const tenantId = localStorage.getItem('tenantId') || 'default-tenant';
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Tenant-Id': tenantId
       },
       body: JSON.stringify({ name, email, password, department })
     });

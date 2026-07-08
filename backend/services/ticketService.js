@@ -48,8 +48,12 @@ class TicketService {
     }
 
     // 2. Load and validate category/department linkages
+    console.log(`[Ticket Creation Debug] Lookup category ID: "${category}" in tenant database: "${tenantLocalStorage.getStore() || 'default-tenant'}"`);
     const categoryDoc = await Category.findById(category);
-    if (!categoryDoc) throw new Error('Category not found');
+    if (!categoryDoc) {
+      console.error(`[Ticket Creation Debug] Category ID "${category}" was NOT found in tenant database: "${tenantLocalStorage.getStore() || 'default-tenant'}"`);
+      throw new Error('Category not found');
+    }
 
     const deptDoc = await Department.findById(department);
     if (!deptDoc) throw new Error('Department not found');

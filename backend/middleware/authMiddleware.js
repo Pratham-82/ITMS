@@ -22,32 +22,49 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, getJwtSecret());
 
-      // Get user from the token, exclude password, bypass tenant plugin for validation, populate groups & department
-      req.user = await User.findOne({ _id: decoded.id })
-        .setOptions({ bypassTenant: true })
-        .select('-password')
-        .populate({
-          path: 'groups',
-          populate: {
-            path: 'department'
+      // 1. Resolve the user's tenant ID from the central registry
+      const GlobalUser = require('../models/GlobalUser');
+      const globalUser = await GlobalUser.findOne({ userId: decoded.id });
+      
+      const activeTenant = globalUser ? globalUser.tenantId : 'default-tenant';
+      const tenantLocalStorage = require('./tenantContext');
+
+      // 2. Fetch the user inside their correct database connection context
+      await new Promise((resolve, reject) => {
+        tenantLocalStorage.run(activeTenant, async () => {
+          try {
+            req.user = await User.findById(decoded.id)
+              .select('-password')
+              .populate({
+                path: 'groups',
+                populate: {
+                  path: 'department'
+                }
+              });
+
+            if (!req.user) {
+              return reject(new Error('User not found'));
+            }
+
+            req.tenantId = activeTenant;
+            resolve();
+          } catch (err) {
+            reject(err);
           }
         });
-      
-      if (!req.user) {
-        return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
-      }
+      });
 
-      // Enforce the user's actual registered tenantId for all downstream operations
-      const tenantLocalStorage = require('./tenantContext');
-      const activeTenant = req.user.tenantId || 'default-tenant';
-      req.tenantId = activeTenant;
-
+      // 3. Continue route execution in the active tenant context
       tenantLocalStorage.run(activeTenant, () => {
         next();
       });
     } catch (error) {
       console.error(error);
-      return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
+      const isUserNotFound = error.message === 'User not found';
+      return res.status(401).json({ 
+        success: false, 
+        message: isUserNotFound ? 'Not authorized, user not found' : 'Not authorized, token failed' 
+      });
     }
   }
 

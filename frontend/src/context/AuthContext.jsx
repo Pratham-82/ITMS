@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }) => {
   // Logout User
   const logout = useCallback(() => {
     localStorage.removeItem('token');
-    localStorage.removeItem('tenantId');
+    // Preserve tenantId so the user stays in the same workspace context on logout
     setUser(null);
   }, []);
 

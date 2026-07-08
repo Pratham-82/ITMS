@@ -228,8 +228,13 @@ const Sidebar = ({ isOpen, onClose }) => {
   }, [user]);
 
   const handleLogout = () => {
+    const tenantId = localStorage.getItem('tenantId');
     logout();
-    navigate('/login');
+    if (tenantId && tenantId !== 'default-tenant') {
+      navigate(`/login?tenant=${tenantId}`);
+    } else {
+      navigate('/login');
+    }
   };
 
   const handleNotificationClick = async (notif) => {

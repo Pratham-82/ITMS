@@ -1,0 +1,205 @@
+/* Sidebar.css */
+
+.sb-brand-icon {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb-brand-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sb-nav-container {
+  transition: all 0.2s ease;
+}
+
+.sb-nav-drag-over {
+  border: 2px dashed var(--accent-color);
+  background-color: rgba(99, 102, 241, 0.03);
+  border-radius: 8px;
+  margin: 8px;
+  padding: 16px 8px;
+}
+
+.sb-drop-hint {
+  padding: 12px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-color);
+  border: 1px dashed var(--accent-color);
+  border-radius: 6px;
+  background-color: rgba(99, 102, 241, 0.05);
+  margin-bottom: 12px;
+  animation: pulse 1.5s infinite;
+}
+
+.sb-nav-item-edit-mode {
+  cursor: grab !important;
+}
+
+.sb-nav-item-edit-disabled {
+  cursor: not-allowed !important;
+}
+
+.sb-grip-icon {
+  margin-left: auto;
+  opacity: 0.5;
+}
+
+.sb-unread-badge {
+  margin-left: auto;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 900;
+  border-radius: 10px; 
+  background-color: #ef4444;
+  color: white;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+}
+
+/* Settings Link overrides */
+.sb-settings-link {
+  margin-top: 12px; 
+  border-top: 1px solid rgba(255,255,255,0.03); 
+  padding-top: 12px;
+  transition: all 0.2s ease;
+}
+
+.sb-settings-link-drag-over {
+  border-top: 1px solid #ef4444 !important; 
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  color: #ef4444 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3) !important;
+  transform: scale(1.02);
+}
+
+/* Floating Notification Drawer */
+.sb-notifications-drawer {
+  position: fixed; 
+  bottom: 120px; 
+  left: 290px; 
+  width: 320px; 
+  max-height: 400px; 
+  background-color: var(--bg-secondary); 
+  border: 1px solid var(--border-color); 
+  border-radius: 12px; 
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5); 
+  z-index: 1000; 
+  display: flex; 
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-out;
+  backdrop-filter: blur(20px);
+}
+
+.sb-notifications-header {
+  padding: 12px 16px; 
+  border-bottom: 1px solid var(--border-color); 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+}
+
+.sb-mark-all-read-btn {
+  border: none; 
+  background: none; 
+  color: var(--accent-color); 
+  font-size: 11px; 
+  font-weight: 700; 
+  cursor: pointer;
+}
+
+.sb-notifications-list {
+  overflow-y: auto; 
+  flex: 1; 
+  padding: 4px;
+}
+
+.sb-notifications-empty {
+  padding: 24px 16px; 
+  text-align: center; 
+  color: var(--text-muted); 
+  font-size: 12px;
+}
+
+.sb-notification-item {
+  padding: 10px 12px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  transition: background-color 0.2s; 
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sb-notification-unread {
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.sb-notification-item:hover {
+  background-color: rgba(255,255,255,0.04) !important;
+}
+
+.sb-unread-dot {
+  width: 6px; 
+  height: 6px; 
+  border-radius: 50%; 
+  background-color: var(--accent-color); 
+  margin-top: 6px; 
+  flex-shrink: 0;
+}
+
+.sb-notification-content {
+  flex: 1;
+}
+
+.sb-notification-title {
+  font-size: 12px; 
+  font-weight: 700; 
+  color: var(--text-primary);
+}
+
+.sb-notification-body {
+  font-size: 11px; 
+  color: var(--text-secondary); 
+  margin-top: 2px; 
+  line-height: 1.3;
+}
+
+.sb-notification-time {
+  font-size: 9px; 
+  color: var(--text-muted); 
+  margin-top: 4px;
+}
+
+.sb-notifications-footer {
+  padding: 8px; 
+  border-top: 1px solid var(--border-color); 
+  display: flex; 
+  justify-content: center;
+}
+
+.sb-close-panel-btn {
+  padding: 4px 12px; 
+  font-size: 11px; 
+  width: 100%;
+}
+
+.sidebar-profile {
+  transition: all var(--transition-fast);
+}
+
+.sidebar-profile:hover:not(.sb-nav-item-edit-disabled) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.sidebar-profile.active {
+  background-color: rgba(99, 102, 241, 0.05);
+  border-left: 3px solid var(--accent-color);
+}

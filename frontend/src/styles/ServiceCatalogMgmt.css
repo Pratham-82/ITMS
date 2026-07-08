@@ -1,0 +1,215 @@
+/* ServiceCatalogMgmt.css */
+.scm-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@media (max-width: 992px) {
+  .scm-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scm-form-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 24px;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.scm-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.scm-card-subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.scm-input-group {
+  margin-bottom: 20px;
+}
+
+.scm-input-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.scm-input-icon-wrapper {
+  position: relative;
+}
+
+.scm-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+
+.scm-icon-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.scm-icon-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.scm-color-picker-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.scm-color-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform var(--transition-fast);
+}
+
+.scm-color-dot:hover {
+  transform: scale(1.1);
+}
+
+.scm-color-dot.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.scm-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scm-item-card {
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background-color: var(--bg-tertiary);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all var(--transition-fast);
+}
+
+.scm-item-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  background-color: rgba(255, 255, 255, 0.01);
+}
+
+.scm-item-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.scm-avatar-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.scm-info-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.scm-catalog-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.scm-catalog-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.scm-actions-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scm-btn {
+  padding: 8px 16px;
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.scm-btn-primary {
+  background: var(--accent-gradient);
+  color: white;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.scm-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.scm-btn-secondary {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.scm-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.scm-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.scm-badge-active {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: rgb(16, 185, 129);
+}
+
+.scm-badge-inactive {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
+}

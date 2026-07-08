@@ -1,0 +1,425 @@
+/* EscalationRules.css */
+
+.er-form-card-override {
+  max-width: none !important; 
+  margin: 0 !important; 
+  backdrop-filter: blur(16px);
+}
+
+.er-header {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 24px;
+}
+
+.er-header-title {
+  font-size: 20px; 
+  fontWeight: 800; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  margin: 0;
+}
+
+.er-cancel-btn {
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  padding: 6px 12px;
+}
+
+.er-form {
+  display: flex; 
+  flex-direction: column; 
+  gap: 20px;
+}
+
+.er-grid-2col {
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 16px;
+}
+
+.er-grid-15-1col-center {
+  display: grid; 
+  grid-template-columns: 1.5fr 1fr; 
+  gap: 16px; 
+  align-items: center;
+}
+
+.er-input-style {
+  width: 100%; 
+  padding: 12px; 
+  border-radius: 8px; 
+  border: 1px solid var(--border-color); 
+  background-color: var(--bg-tertiary); 
+  color: var(--text-primary);
+}
+
+.er-checkbox-container {
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  height: 100%; 
+  padding-top: 20px;
+}
+
+.er-checkbox-input {
+  width: 18px; 
+  height: 18px; 
+  cursor: pointer;
+}
+
+.er-checkbox-label {
+  font-weight: 600; 
+  cursor: pointer; 
+  margin: 0;
+}
+
+.er-section-divider {
+  border-top: 1px solid var(--border-color); 
+  padding-top: 20px;
+}
+
+.er-levels-header {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 16px;
+}
+
+.er-levels-title {
+  font-size: 16px; 
+  font-weight: 700; 
+  margin: 0;
+}
+
+.er-add-level-btn {
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  padding: 6px 12px; 
+  font-size: 13px;
+}
+
+.er-levels-list {
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+  max-height: 400px; 
+  overflow-y: auto; 
+  padding-right: 4px;
+}
+
+.er-level-row {
+  display: grid; 
+  grid-template-columns: 40px 1.2fr 1.5fr 2fr 40px; 
+  gap: 12px; 
+  align-items: center; 
+  padding: 12px; 
+  border-radius: 8px; 
+  background-color: rgba(255,255,255,0.02); 
+  border: 1px solid var(--border-color);
+}
+
+.er-level-number {
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  width: 30px; 
+  height: 30px; 
+  border-radius: 50%; 
+  background-color: var(--accent-color); 
+  color: white; 
+  font-weight: 800; 
+  font-size: 13px;
+}
+
+.er-level-input {
+  width: 100%; 
+  padding: 8px; 
+  border-radius: 6px; 
+  border: 1px solid var(--border-color); 
+  background-color: var(--bg-tertiary); 
+  color: var(--text-primary); 
+  font-size: 13px;
+}
+
+.er-duration-flex {
+  display: flex; 
+  gap: 4px; 
+  align-items: center;
+}
+
+.er-duration-number-input {
+  width: 60px; 
+  padding: 8px; 
+  border-radius: 6px; 
+  border: 1px solid var(--border-color); 
+  background-color: var(--bg-tertiary); 
+  color: var(--text-primary); 
+  font-size: 13px;
+}
+
+.er-duration-select {
+  flex: 1; 
+  padding: 8px; 
+  border-radius: 6px; 
+  border: 1px solid var(--border-color); 
+  background-color: var(--bg-tertiary); 
+  color: var(--text-primary); 
+  font-size: 13px;
+}
+
+.er-level-delete-btn {
+  border: none; 
+  background: none; 
+  color: #f87171; 
+  cursor: pointer; 
+  padding: 6px;
+}
+
+.er-diagram-container {
+  margin-top: 10px; 
+  padding: 16px; 
+  border-radius: 10px; 
+  border: 1px solid var(--border-color); 
+  background-color: rgba(255,255,255,0.01);
+}
+
+.er-diagram-title {
+  font-size: 13px; 
+  font-weight: 700; 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em; 
+  color: var(--text-secondary); 
+  margin-bottom: 14px; 
+  display: flex; 
+  align-items: center; 
+  gap: 6px;
+}
+
+.er-diagram-nodes-row {
+  display: flex; 
+  flex-wrap: wrap; 
+  align-items: center; 
+  gap: 8px;
+}
+
+.er-diagram-start-node {
+  display: flex; 
+  flex-direction: column; 
+  padding: 8px 14px; 
+  border-radius: 8px; 
+  border: 1px solid var(--border-color); 
+  background-color: var(--bg-tertiary); 
+  min-width: 100px;
+}
+
+.er-diagram-node-subtitle {
+  font-size: 10px; 
+  color: var(--text-muted); 
+  font-weight: 700; 
+  text-transform: uppercase;
+}
+
+.er-diagram-node-name {
+  font-size: 12px; 
+  font-weight: 700; 
+  color: var(--text-primary);
+}
+
+.er-diagram-level-node {
+  display: flex; 
+  flex-direction: column; 
+  padding: 8px 14px; 
+  border-radius: 8px; 
+  border: 1px solid var(--accent-color); 
+  background-color: rgba(99, 102, 241, 0.05);
+  box-shadow: 0 0 10px rgba(99,102,241,0.1);
+  min-width: 110px;
+}
+
+.er-diagram-level-badge {
+  font-size: 10px; 
+  color: var(--accent-color); 
+  font-weight: 800;
+}
+
+.er-diagram-end-node {
+  display: flex; 
+  padding: 8px 14px; 
+  border-radius: 8px; 
+  border: 1px dashed var(--border-color); 
+  background-color: transparent;
+}
+
+.er-diagram-end-text {
+  font-size: 12px; 
+  font-weight: 600; 
+  color: var(--text-muted); 
+  display: flex; 
+  align-items: center; 
+  gap: 4px;
+}
+
+.er-submit-btn {
+  width: 100%; 
+  padding: 14px; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  gap: 8px; 
+  font-size: 15px; 
+  font-weight: 700; 
+  background: var(--accent-gradient); 
+  border: none; 
+  color: white; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  box-shadow: 0 4px 15px rgba(99,102,241,0.35);
+}
+
+.er-list-header {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 20px;
+}
+
+.er-list-count {
+  padding: 4px 10px; 
+  border-radius: 12px; 
+  background-color: var(--bg-tertiary); 
+  font-size: 12px; 
+  font-weight: 700;
+}
+
+.er-loading-wrapper {
+  display: flex; 
+  justify-content: center; 
+  padding: 48px;
+}
+
+.er-empty-state {
+  padding: 40px; 
+  border-radius: 12px; 
+  border: 1px dashed var(--border-color); 
+  text-align: center; 
+  color: var(--text-muted);
+}
+
+.er-empty-icon {
+  margin: 0 auto 12px auto; 
+  opacity: 0.5;
+}
+
+.er-empty-text {
+  margin: 0; 
+  font-size: 14px;
+}
+
+.er-rules-list {
+  display: flex; 
+  flex-direction: column; 
+  gap: 16px;
+}
+
+.er-rule-card {
+  padding: 20px; 
+  border-radius: 12px; 
+  background-color: var(--bg-card); 
+  border: 1px solid var(--border-color);
+  box-shadow: var(--box-shadow-sm);
+  position: relative;
+}
+
+.er-rule-card-header {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: flex-start; 
+  margin-bottom: 12px;
+}
+
+.er-rule-card-category {
+  font-size: 11px; 
+  font-weight: 800; 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em; 
+  color: var(--accent-color);
+}
+
+.er-rule-card-title {
+  font-size: 17px; 
+  font-weight: 800; 
+  margin: 2px 0 0 0;
+}
+
+.er-rule-card-actions {
+  display: flex; 
+  align-items: center; 
+  gap: 8px;
+}
+
+.er-rule-card-btn {
+  border: none; 
+  background: none; 
+  color: var(--text-secondary); 
+  cursor: pointer; 
+  padding: 4px;
+}
+
+.er-rule-card-btn-delete {
+  border: none; 
+  background: none; 
+  color: #f87171; 
+  cursor: pointer; 
+  padding: 4px;
+}
+
+.er-card-levels-preview {
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+  margin-top: 12px; 
+  border-top: 1px solid var(--border-color); 
+  padding-top: 12px;
+}
+
+.er-card-level-preview-row {
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  font-size: 13px;
+}
+
+.er-card-level-preview-badge {
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  width: 20px; 
+  height: 20px; 
+  border-radius: 50%; 
+  background-color: rgba(255,255,255,0.06); 
+  font-size: 11px; 
+  font-weight: 700;
+}
+
+.er-card-level-preview-info {
+  flex: 1; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+}
+
+.er-card-level-preview-dept {
+  font-weight: 700;
+}
+
+.er-card-level-preview-duration {
+  color: var(--text-secondary); 
+  display: flex; 
+  align-items: center; 
+  gap: 4px;
+}

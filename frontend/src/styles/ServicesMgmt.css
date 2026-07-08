@@ -1,0 +1,279 @@
+/* ServicesMgmt.css */
+.sm-container {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 32px;
+  align-items: start;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@media (max-width: 1100px) {
+  .sm-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sm-form-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 24px;
+  box-shadow: var(--box-shadow-sm);
+}
+
+.sm-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.sm-card-subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.sm-input-group {
+  margin-bottom: 20px;
+}
+
+.sm-input-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.sm-select, .sm-input, .sm-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.sm-select:focus, .sm-input:focus, .sm-textarea:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.sm-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Field Builder Section */
+.sm-field-builder {
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.sm-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sm-field-item {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sm-field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sm-field-label-input {
+  flex: 2;
+}
+
+.sm-field-type-select {
+  flex: 1;
+}
+
+.sm-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.sm-checkbox-label input {
+  cursor: pointer;
+  accent-color: var(--accent-color);
+}
+
+.sm-remove-field-btn {
+  background: transparent;
+  border: none;
+  color: var(--status-rejected-text);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.sm-remove-field-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.sm-field-options-input {
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.01);
+  color: var(--text-primary);
+}
+
+/* Assignment Section */
+.sm-assignment-section {
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.sm-assignment-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 576px) {
+  .sm-assignment-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sm-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sm-item-card {
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background-color: var(--bg-tertiary);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all var(--transition-fast);
+}
+
+.sm-item-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  background-color: rgba(255, 255, 255, 0.01);
+}
+
+.sm-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.sm-item-title {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.sm-item-catalog-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: white;
+}
+
+.sm-item-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.sm-item-fields-summary {
+  background: rgba(255, 255, 255, 0.01);
+  padding: 10px 14px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.sm-item-fields-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.sm-fields-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sm-field-tag {
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.sm-item-assignment-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-top: 1px dashed var(--border-color);
+  padding-top: 12px;
+}
+
+.sm-assign-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sm-assign-label {
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 80px;
+}
+
+.sm-assign-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sm-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 14px;
+}

@@ -46,14 +46,43 @@ const isOriginAllowed = (origin) => {
   return false;
 };
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (isOriginAllowed(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
+// Self-configuring CORS to automatically allow same-host requests (with tenant subdomains)
+const corsOptionsDelegate = (req, callback) => {
+  let corsOptions;
+  const origin = req.header('Origin');
+  
+  if (!origin) {
+    // No Origin header (same-origin non-GET request), allow it
+    corsOptions = { origin: true };
+    return callback(null, corsOptions);
   }
-}));
+
+  // Get host from request headers
+  const requestHost = req.headers['x-forwarded-host'] || req.headers.host || '';
+  const requestHostname = requestHost.split(':')[0].toLowerCase();
+  
+  try {
+    const originHostname = new URL(origin).hostname.toLowerCase();
+    
+    // If origin matches request hostname (or is a subdomain of it), allow it automatically
+    if (originHostname === requestHostname || originHostname.endsWith('.' + requestHostname)) {
+      corsOptions = { origin: true };
+      return callback(null, corsOptions);
+    }
+  } catch (err) {
+    // Ignore URL parse error
+  }
+
+  // Fallback to configured allowed origins list
+  if (isOriginAllowed(origin)) {
+    corsOptions = { origin: true };
+  } else {
+    corsOptions = { origin: false };
+  }
+  callback(null, corsOptions);
+};
+
+app.use(cors(corsOptionsDelegate));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

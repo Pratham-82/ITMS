@@ -1,8 +1,23 @@
 const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
 
 // Register global multi-tenant Mongoose plugin
 const tenantPlugin = require('../middleware/tenantPlugin');
 mongoose.plugin(tenantPlugin);
+
+const preloadModels = () => {
+  const modelsPath = path.join(__dirname, '../models');
+  fs.readdirSync(modelsPath).forEach(file => {
+    if (file.endsWith('.js') && file !== 'tenantModelHelper.js') {
+      try {
+        require(path.join(modelsPath, file));
+      } catch (err) {
+        console.error(`[Model Autoload] Failed to load model "${file}":`, err.message);
+      }
+    }
+  });
+};
 
 const cleanSingleFieldUniqueIndexes = async () => {
   try {
@@ -76,6 +91,10 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/apexresolve');
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     
+    // Autoload all schemas to register them globally in tenantModelHelper
+    preloadModels();
+    console.log('All tenant schemas autoloaded successfully.');
+
     // Run automated unique index migration
     await cleanSingleFieldUniqueIndexes();
 

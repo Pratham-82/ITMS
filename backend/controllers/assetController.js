@@ -354,6 +354,16 @@ const deleteAsset = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Asset not found' });
     }
 
+    if (asset.status !== 'Retired') {
+      asset.status = 'Retired';
+      await asset.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Asset retired successfully',
+        data: asset
+      });
+    }
+
     asset.isActive = false;
     await asset.save();
 
@@ -367,7 +377,6 @@ const deleteAsset = async (req, res) => {
   }
 };
 
-// @desc    Purchase Webhook integration: registers asset automatically from a purchase transaction
 // @route   POST /api/assets/purchase
 // @access  Private (Admin only)
 const purchaseAsset = async (req, res) => {

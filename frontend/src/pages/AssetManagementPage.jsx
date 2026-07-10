@@ -292,7 +292,12 @@ const AssetManagementPage = () => {
   };
 
   const handleDelete = async (asset) => {
-    if (!window.confirm(`Are you sure you want to deactivate asset "${asset.name}" (${asset.assetCode})?`)) return;
+    const isRetired = asset.status === 'Retired';
+    const message = isRetired 
+      ? `Are you sure you want to permanently delete/hide asset "${asset.name}" (${asset.assetCode})?`
+      : `Are you sure you want to retire asset "${asset.name}" (${asset.assetCode})?`;
+
+    if (!window.confirm(message)) return;
 
     try {
       const response = await fetch(`/api/assets/${asset._id}`, {
@@ -301,10 +306,14 @@ const AssetManagementPage = () => {
       });
       const result = await response.json();
       if (result.success) {
-        addToast('Asset Deactivated', `Asset Code ${asset.assetCode} retired.`, 'success');
+        const toastTitle = isRetired ? 'Asset Deleted' : 'Asset Retired';
+        const toastMsg = isRetired 
+          ? `Asset ${asset.assetCode} permanently deactivated.`
+          : `Asset ${asset.assetCode} retired successfully.`;
+        addToast(toastTitle, toastMsg, 'success');
         fetchAssets();
       } else {
-        addToast('Action Failed', result.message || 'Failed to deactivate', 'error');
+        addToast('Action Failed', result.message || 'Failed to execute action', 'error');
       }
     } catch (err) {
       addToast('Error', 'Communication failure', 'error');

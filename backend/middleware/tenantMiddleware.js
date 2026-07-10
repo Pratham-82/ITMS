@@ -53,7 +53,27 @@ const resolveTenant = (req) => {
 };
 
 const tenantMiddleware = async (req, res, next) => {
-  const tenantId = resolveTenant(req);
+  let tenantId = resolveTenant(req);
+
+  // Dynamic context resolution from JWT if subdomain is default-tenant
+  if ((!tenantId || tenantId === 'default-tenant') && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      const jwt = require('jsonwebtoken');
+      const secret = process.env.JWT_SECRET || 'apexresolve_development_jwt_secret';
+      const decoded = jwt.verify(token, secret);
+      if (decoded && decoded.id) {
+        const GlobalUser = require('../models/GlobalUser');
+        const globalUser = await GlobalUser.findOne({ userId: decoded.id });
+        if (globalUser && globalUser.tenantId) {
+          tenantId = globalUser.tenantId;
+        }
+      }
+    } catch (err) {
+      // Ignore token verification errors
+    }
+  }
+
   req.tenantId = tenantId;
 
   if (tenantId && tenantId !== 'default-tenant') {

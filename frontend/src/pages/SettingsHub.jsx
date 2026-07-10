@@ -1140,7 +1140,7 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
         let stockAssets = 0;
         let repairAssets = 0;
         let retiredAssets = 0;
-        const totalAssetsCount = liveData.assets.length || 550;
+        const totalAssetsCount = liveData.assets.length;
 
         if (liveData.assets.length > 0) {
           liveData.assets.forEach(a => {
@@ -1157,17 +1157,12 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
               activeAssets++;
             }
           });
-        } else {
-          activeAssets = 385;
-          stockAssets = 110;
-          repairAssets = 33;
-          retiredAssets = 22;
         }
 
-        const useDash = totalAssetsCount > 0 ? Math.round((activeAssets / totalAssetsCount) * 251) : 176;
-        const stockDash = totalAssetsCount > 0 ? Math.round((stockAssets / totalAssetsCount) * 251) : 50;
-        const repairDash = totalAssetsCount > 0 ? Math.round((repairAssets / totalAssetsCount) * 251) : 15;
-        const retiredDash = totalAssetsCount > 0 ? Math.round((retiredAssets / totalAssetsCount) * 251) : 10;
+        const useDash = totalAssetsCount > 0 ? Math.round((activeAssets / totalAssetsCount) * 251) : 0;
+        const stockDash = totalAssetsCount > 0 ? Math.round((stockAssets / totalAssetsCount) * 251) : 0;
+        const repairDash = totalAssetsCount > 0 ? Math.round((repairAssets / totalAssetsCount) * 251) : 0;
+        const retiredDash = totalAssetsCount > 0 ? Math.round((retiredAssets / totalAssetsCount) * 251) : 0;
 
         return (
           <div className="fade-in">
@@ -1251,7 +1246,7 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                         <span className="sh-donut-legend-label">In Use</span>
                       </div>
                       <span className="sh-donut-legend-val">
-                        {liveData.assets.length === 0 ? '385 (70%)' : `${activeAssets} (${Math.round((activeAssets / totalAssetsCount) * 100)}%)`}
+                        {totalAssetsCount > 0 ? `${activeAssets} (${Math.round((activeAssets / totalAssetsCount) * 100)}%)` : '0 (0%)'}
                       </span>
                     </div>
                     <div className="sh-donut-legend-item">
@@ -1260,7 +1255,7 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                         <span className="sh-donut-legend-label">In Stock</span>
                       </div>
                       <span className="sh-donut-legend-val">
-                        {liveData.assets.length === 0 ? '110 (20%)' : `${stockAssets} (${Math.round((stockAssets / totalAssetsCount) * 100)}%)`}
+                        {totalAssetsCount > 0 ? `${stockAssets} (${Math.round((stockAssets / totalAssetsCount) * 100)}%)` : '0 (0%)'}
                       </span>
                     </div>
                     <div className="sh-donut-legend-item">
@@ -1269,7 +1264,7 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                         <span className="sh-donut-legend-label">Under Maintenance</span>
                       </div>
                       <span className="sh-donut-legend-val">
-                        {liveData.assets.length === 0 ? '33 (6%)' : `${repairAssets} (${Math.round((repairAssets / totalAssetsCount) * 100)}%)`}
+                        {totalAssetsCount > 0 ? `${repairAssets} (${Math.round((repairAssets / totalAssetsCount) * 100)}%)` : '0 (0%)'}
                       </span>
                     </div>
                     <div className="sh-donut-legend-item">
@@ -1278,7 +1273,7 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                         <span className="sh-donut-legend-label">Retired</span>
                       </div>
                       <span className="sh-donut-legend-val">
-                        {liveData.assets.length === 0 ? '22 (4%)' : `${retiredAssets} (${Math.round((retiredAssets / totalAssetsCount) * 100)}%)`}
+                        {totalAssetsCount > 0 ? `${retiredAssets} (${Math.round((retiredAssets / totalAssetsCount) * 100)}%)` : '0 (0%)'}
                       </span>
                     </div>
                   </div>
@@ -1302,38 +1297,11 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                     </thead>
                     <tbody>
                       {liveData.assets.length === 0 ? (
-                        <>
-                          <tr>
-                            <td><strong>Dell Latitude 5440</strong></td>
-                            <td>Laptop</td>
-                            <td><span className="sh-status-pill sh-status-active">In Use</span></td>
-                            <td>John Doe</td>
-                          </tr>
-                          <tr>
-                            <td><strong>HP LaserJet Pro M404</strong></td>
-                            <td>Printer</td>
-                            <td><span className="sh-status-pill sh-status-active">In Use</span></td>
-                            <td>IT Support</td>
-                          </tr>
-                          <tr>
-                            <td><strong>Microsoft 365 Business</strong></td>
-                            <td>Software</td>
-                            <td><span className="sh-status-pill sh-status-active">In Use</span></td>
-                            <td>Finance Team</td>
-                          </tr>
-                          <tr>
-                            <td><strong>Cisco Catalyst 2960</strong></td>
-                            <td>Network Switch</td>
-                            <td><span className="sh-status-pill sh-status-active">In Use</span></td>
-                            <td>Network Team</td>
-                          </tr>
-                          <tr>
-                            <td><strong>Adobe Creative Cloud</strong></td>
-                            <td>Software</td>
-                            <td><span className="sh-status-pill sh-status-active">In Use</span></td>
-                            <td>Design Team</td>
-                          </tr>
-                        </>
+                        <tr>
+                          <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
+                            No recent assets found
+                          </td>
+                        </tr>
                       ) : (
                         liveData.assets.slice(0, 5).map((asset, idx) => (
                           <tr key={idx}>

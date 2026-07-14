@@ -386,7 +386,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               <span>Tickets Queue</span>
             </NavLink>
 
-            {!isSuperAdmin && (
+            {user?.role === 'admin' && (
               <NavLink 
                 to="/group-tickets" 
                 className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} ${isSidebarEditMode ? 'sb-nav-item-edit-disabled' : ''}`}

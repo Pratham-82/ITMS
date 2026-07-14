@@ -37,6 +37,10 @@ const ComplaintDetail = () => {
   const [complaint, setComplaint] = useState(null);
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState([]);
+
+  const isSuperAdmin = user?.role === 'admin' && (!user.department || user.department === 'General Administration');
+  const isAssignedToMe = complaint?.assignedTo?._id === user?._id || complaint?.assignedTo === user?._id;
+  const isReadOnly = user?.role === 'admin' && !isSuperAdmin && !isAssignedToMe;
   
   // Admin Action States
   const [status, setStatus] = useState('');
@@ -1476,16 +1480,16 @@ const ComplaintDetail = () => {
               <input 
                 type="text" 
                 className="chat-input" 
-                placeholder={complaint.status === 'Resolved' || complaint.status === 'Rejected' ? "This ticket is closed. No further comments are allowed." : "Type your response here..."} 
+                placeholder={isReadOnly ? "You are viewing this ticket in read-only mode." : (complaint.status === 'Resolved' || complaint.status === 'Rejected' ? "This ticket is closed. No further comments are allowed." : "Type your response here...")} 
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
-                disabled={complaint.status === 'Resolved' || complaint.status === 'Rejected'}
+                disabled={isReadOnly || complaint.status === 'Resolved' || complaint.status === 'Rejected'}
               />
               <button 
                 type="submit" 
                 className="btn-send"
-                disabled={isSendingMessage || complaint.status === 'Resolved' || complaint.status === 'Rejected'}
+                disabled={isReadOnly || isSendingMessage || complaint.status === 'Resolved' || complaint.status === 'Rejected'}
               >
                 <Send size={16} />
               </button>
@@ -1623,7 +1627,14 @@ const ComplaintDetail = () => {
                 Officer Audit Actions
               </h3>
               
-              {complaint.status === 'Reopen Requested' ? (
+              {isReadOnly ? (
+                <div style={{ background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.2)', padding: '16px', borderRadius: '10px', color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.4 }}>
+                  🛡️ <strong>Read-Only Access</strong>
+                  <p style={{ margin: '8px 0 0 0' }}>
+                    This complaint is assigned to your group/team (<strong>{complaint.assignedGroup?.name || complaint.assignedDepartment}</strong>). You can monitor and view its details, but only the assigned officer can execute actions.
+                  </p>
+                </div>
+              ) : complaint.status === 'Reopen Requested' ? (
                 <div>
                   <div style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '16px', borderRadius: '10px', marginBottom: '16px' }}>
                     <div style={{ fontWeight: 600, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', marginBottom: '8px' }}>

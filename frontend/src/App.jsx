@@ -400,6 +400,17 @@ const AppContentWrapper = () => {
               </ProtectedRoute>
             } 
           />
+
+          <Route 
+            path="/group-tickets" 
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AppLayout>
+                  <TicketsPage groupOnly={true} />
+                </AppLayout>
+              </ProtectedRoute>
+            } 
+          />
           
           <Route 
             path="/file-complaint" 

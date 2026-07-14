@@ -216,10 +216,12 @@ const Pagination = ({ currentPage, totalEntries, pageSize, setPageSize, setCurre
   );
 };
 
-const TicketsPage = () => {
+const TicketsPage = ({ groupOnly = false }) => {
   const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
+
+  const isSuperAdmin = user?.role === 'admin' && (!user.department || user.department === 'General Administration');
 
   const [complaints, setComplaints] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -320,6 +322,11 @@ const TicketsPage = () => {
       setLoading(true);
       let url = '/api/tickets';
       const params = [];
+      if (groupOnly) {
+        params.push('groupOnly=true');
+      } else if (user?.role === 'admin' && !isSuperAdmin) {
+        params.push('assignedToMe=true');
+      }
       if (statusFilter) params.push(`status=${encodeURIComponent(statusFilter)}`);
       if (priorityFilter) params.push(`priority=${encodeURIComponent(priorityFilter)}`);
       if (categoryFilter) params.push(`category=${encodeURIComponent(categoryFilter)}`);
@@ -365,7 +372,7 @@ const TicketsPage = () => {
       fetchCategories();
       fetchComplaints();
     }
-  }, [user, statusFilter, priorityFilter, categoryFilter, sortBy, dateRangeFilter, startDateFilter, endDateFilter, debouncedSearch]);
+  }, [user, statusFilter, priorityFilter, categoryFilter, sortBy, dateRangeFilter, startDateFilter, endDateFilter, debouncedSearch, groupOnly]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

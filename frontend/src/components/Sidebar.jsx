@@ -386,6 +386,23 @@ const Sidebar = ({ isOpen, onClose }) => {
               <span>Tickets Queue</span>
             </NavLink>
 
+            {!isSuperAdmin && (
+              <NavLink 
+                to="/group-tickets" 
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} ${isSidebarEditMode ? 'sb-nav-item-edit-disabled' : ''}`}
+                onClick={(e) => {
+                  if (isSidebarEditMode) {
+                    e.preventDefault();
+                  } else {
+                    onClose?.();
+                  }
+                }}
+              >
+                <Users size={18} />
+                <span>Group Complaints</span>
+              </NavLink>
+            )}
+
             <NavLink 
               to="/admin/service-requests" 
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} ${isSidebarEditMode ? 'sb-nav-item-edit-disabled' : ''}`}

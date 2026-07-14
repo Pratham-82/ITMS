@@ -167,7 +167,7 @@ class TicketService {
     const {
       categoryId, category, ticketTypeId, departmentId,
       status, priority, search, page, limit, sort,
-      startDate, endDate
+      startDate, endDate, assignedToMe, groupOnly
     } = queryParams;
 
     const filter = { tenantId };
@@ -219,10 +219,16 @@ class TicketService {
       );
       if (!isSuperAdmin) {
         const userGroupIds = (user.groups || []).map(g => g._id || g);
-        filter.$or = [
-          { assignedTo: user.id },
-          { assignedGroup: { $in: userGroupIds } }
-        ];
+        if (assignedToMe === 'true') {
+          filter.assignedTo = user.id;
+        } else if (groupOnly === 'true') {
+          filter.assignedGroup = { $in: userGroupIds };
+        } else {
+          filter.$or = [
+            { assignedTo: user.id },
+            { assignedGroup: { $in: userGroupIds } }
+          ];
+        }
       }
     }
 
@@ -331,12 +337,18 @@ class TicketService {
       throw new Error('Ticket not found');
     }
 
-    // Validate assignee role permissions if changing assignee
+    // Validate write access: regular support staff can only update tickets assigned directly to them
     const isSuperAdmin = user.role === 'admin' && (
       (user.groups && user.groups.length > 0 && user.groups.some(g => g.department && (g.department.name === 'General Administration' || g.department === 'General Administration' || (g.department._id && g.department.name === 'General Administration')))) ||
       ((!user.groups || user.groups.length === 0) && (!user.department || user.department === 'General Administration'))
     );
-
+    if (user.role === 'admin' && !isSuperAdmin) {
+      const assignedUserId = ticket.assignedTo?._id || ticket.assignedTo;
+      const isAssignedToUser = assignedUserId && assignedUserId.toString() === user.id;
+      if (!isAssignedToUser) {
+        throw new Error('Unauthorized: Support staff can only modify complaints assigned directly to them');
+      }
+    }
     // Validate resolve permission
     if (status === 'Resolved' && !isSuperAdmin) {
       const canResolve = user.settingsPermissions && user.settingsPermissions.resolveComplaints !== false;
@@ -577,6 +589,15 @@ class TicketService {
 
     if (!ticket) {
       throw new Error('Ticket not found');
+    }
+
+    if (user.role === 'admin') {
+      const isSuperAdmin = this.isSuperAdmin(user);
+      const assignedUserId = ticket.assignedTo?._id || ticket.assignedTo;
+      const isAssignedToUser = assignedUserId && assignedUserId.toString() === user.id;
+      if (!isSuperAdmin && !isAssignedToUser) {
+        throw new Error('Unauthorized: Support staff can only comment on complaints assigned directly to them');
+      }
     }
 
     if (

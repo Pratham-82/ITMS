@@ -87,7 +87,10 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     // Check for user email
-    const user = await User.findOne({ email }).setOptions({ bypassTenant: true }).select('+password');
+    const user = await User.findOne({ email }).setOptions({ bypassTenant: true }).select('+password').populate({
+      path: 'groups',
+      populate: { path: 'department' }
+    });
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
@@ -120,6 +123,8 @@ const loginUser = async (req, res) => {
         dashboardConfig: user.dashboardConfig,
         maxCapacity: user.maxCapacity,
         availabilityStatus: user.availabilityStatus,
+        groups: user.groups,
+        settingsPermissions: user.settingsPermissions,
         token: generateToken(user._id)
       }
     });
@@ -133,7 +138,10 @@ const loginUser = async (req, res) => {
 // @access  Private
 const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).populate({
+      path: 'groups',
+      populate: { path: 'department' }
+    });
     res.status(200).json({
       success: true,
       data: user

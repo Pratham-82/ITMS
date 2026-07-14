@@ -221,7 +221,10 @@ const TicketsPage = ({ groupOnly = false }) => {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
-  const isSuperAdmin = user?.role === 'admin' && (!user.department || user.department === 'General Administration');
+  const isSuperAdmin = user?.role === 'admin' && (
+    (user.groups && user.groups.length > 0 && user.groups.some(g => g.department && (g.department.name === 'General Administration' || g.department === 'General Administration' || (g.department._id && g.department.name === 'General Administration')))) ||
+    ((!user.groups || user.groups.length === 0) && (!user.department || user.department === 'General Administration'))
+  );
 
   const [complaints, setComplaints] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -445,7 +448,7 @@ const TicketsPage = ({ groupOnly = false }) => {
           <div className="panel-header" style={{ marginBottom: '20px' }}>
             <h2 className="panel-title">
               <Filter size={20} className="text-accent" />
-              <span>Master Operations Tickets Queue</span>
+              <span>{groupOnly ? "Group Complaints Queue" : (isSuperAdmin ? "Master Operations Tickets Queue" : "My Assigned Tickets Queue")}</span>
             </h2>
           </div>
 

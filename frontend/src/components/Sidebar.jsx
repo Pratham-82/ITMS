@@ -48,7 +48,10 @@ const Sidebar = ({ isOpen, onClose }) => {
     manageStaff: false,
     manageDepartments: true
   };
-  const isSuperAdmin = user?.role === 'admin' && (!user.department || user.department === 'General Administration');
+  const isSuperAdmin = user?.role === 'admin' && (
+    (user.groups && user.groups.length > 0 && user.groups.some(g => g.department && (g.department.name === 'General Administration' || g.department === 'General Administration' || (g.department._id && g.department.name === 'General Administration')))) ||
+    ((!user.groups || user.groups.length === 0) && (!user.department || user.department === 'General Administration'))
+  );
   const perms = { ...defaultPermissions, ...(user?.settingsPermissions || {}) };
 
   const allSettingsOptions = [

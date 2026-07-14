@@ -38,7 +38,10 @@ const ComplaintDetail = () => {
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState([]);
 
-  const isSuperAdmin = user?.role === 'admin' && (!user.department || user.department === 'General Administration');
+  const isSuperAdmin = user?.role === 'admin' && (
+    (user.groups && user.groups.length > 0 && user.groups.some(g => g.department && (g.department.name === 'General Administration' || g.department === 'General Administration' || (g.department._id && g.department.name === 'General Administration')))) ||
+    ((!user.groups || user.groups.length === 0) && (!user.department || user.department === 'General Administration'))
+  );
   const isAssignedToMe = complaint?.assignedTo?._id === user?._id || complaint?.assignedTo === user?._id;
   const isReadOnly = user?.role === 'admin' && !isSuperAdmin && !isAssignedToMe;
   

@@ -218,7 +218,11 @@ class TicketService {
         ((!user.groups || user.groups.length === 0) && (!user.department || user.department === 'General Administration'))
       );
       if (!isSuperAdmin) {
-        filter.assignedTo = user.id;
+        const userGroupIds = (user.groups || []).map(g => g._id || g);
+        filter.$or = [
+          { assignedTo: user.id },
+          { assignedGroup: { $in: userGroupIds } }
+        ];
       }
     }
 
@@ -303,7 +307,12 @@ class TicketService {
       if (!isSuperAdmin) {
         const assignedUserId = ticket.assignedTo?._id || ticket.assignedTo;
         const isAssignedToUser = assignedUserId && assignedUserId.toString() === user.id;
-        if (!isAssignedToUser) {
+
+        const assignedGroupId = ticket.assignedGroup?._id || ticket.assignedGroup;
+        const userGroupIds = (user.groups || []).map(g => (g._id || g).toString());
+        const isAssignedToUserGroup = assignedGroupId && userGroupIds.includes(assignedGroupId.toString());
+
+        if (!isAssignedToUser && !isAssignedToUserGroup) {
           throw new Error('Unauthorized to view this ticket');
         }
       }
@@ -543,9 +552,16 @@ class TicketService {
 
     if (user.role === 'admin') {
       const assignedUserId = ticket.assignedTo?._id || ticket.assignedTo;
+      const isAssignedToUser = assignedUserId && assignedUserId.toString() === user.id;
+
+      const assignedGroupId = ticket.assignedGroup?._id || ticket.assignedGroup;
+      const userGroupIds = (user.groups || []).map(g => (g._id || g).toString());
+      const isAssignedToUserGroup = assignedGroupId && userGroupIds.includes(assignedGroupId.toString());
+
       return (
         this.isSuperAdmin(user) ||
-        (assignedUserId && assignedUserId.toString() === user.id)
+        isAssignedToUser ||
+        isAssignedToUserGroup
       );
     }
 

@@ -180,10 +180,16 @@ const Dashboard = () => {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
+  const isSuperAdmin = user?.role === 'admin' && (
+    (user.groups && user.groups.length > 0 && user.groups.some(g => g.department && (g.department.name === 'General Administration' || g.department === 'General Administration' || (g.department._id && g.department.name === 'General Administration')))) ||
+    ((!user.groups || user.groups.length === 0) && (!user.department || user.department === 'General Administration'))
+  );
+
   const [complaints, setComplaints] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [citizenAssets, setCitizenAssets] = useState([]);
+  const [groupStats, setGroupStats] = useState(null);
   
   // Date filters
   const [dateRangeFilter, setDateRangeFilter] = useState('all');
@@ -253,12 +259,47 @@ const Dashboard = () => {
     }
   };
 
+  // Fetch group complaints stats
+  const fetchGroupStats = async () => {
+    try {
+      let url = '/api/tickets?groupOnly=true&limit=1000';
+      const params = [];
+      const { start, end } = getDateRange(dateRangeFilter, startDateFilter, endDateFilter);
+      if (start && isValidDate(start)) params.push(`startDate=${encodeURIComponent(start.toISOString())}`);
+      if (end && isValidDate(end)) params.push(`endDate=${encodeURIComponent(end.toISOString())}`);
+      if (params.length > 0) {
+        url += `&${params.join('&')}`;
+      }
+
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        const gc = result.data || [];
+        setGroupStats({
+          total: gc.length,
+          pending: gc.filter(c => c.status === 'Pending').length,
+          active: gc.filter(c => ['Investigating', 'Assigned', 'Escalated', 'Reopen Requested', 'On Hold'].includes(c.status)).length,
+          resolved: gc.filter(c => ['Resolved', 'Awaiting Feedback', 'Closed'].includes(c.status)).length,
+          rejected: gc.filter(c => c.status === 'Rejected').length,
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching group stats:', err);
+    }
+  };
+
   // Fetch complaints
   const fetchComplaints = async () => {
     try {
       setLoading(true);
       let url = '/api/tickets';
       const params = [];
+
+      if (user?.role === 'admin' && !isSuperAdmin) {
+        params.push('assignedToMe=true');
+      }
 
       // Date range filtering parameters
       const { start, end } = getDateRange(dateRangeFilter, startDateFilter, endDateFilter);
@@ -322,6 +363,8 @@ const Dashboard = () => {
       fetchComplaints();
       if (user.role === 'citizen') {
         fetchCitizenAssets();
+      } else if (user?.role === 'admin' && !isSuperAdmin) {
+        fetchGroupStats();
       }
     }
   }, [user, dateRangeFilter, startDateFilter, endDateFilter]);
@@ -389,6 +432,7 @@ const Dashboard = () => {
       complaints={complaints} 
       categories={categories}
       stats={stats}
+      groupStats={groupStats}
       dateRangeFilter={dateRangeFilter}
       setDateRangeFilter={handleDateRangeChange}
       startDateFilter={startDateFilter}
@@ -1416,6 +1460,7 @@ const AdminDashboard = ({
   complaints, 
   categories,
   stats, 
+  groupStats,
   dateRangeFilter,
   setDateRangeFilter,
   startDateFilter,
@@ -1930,6 +1975,45 @@ const AdminDashboard = ({
 
   return (
     <div className="db-container">
+      {groupStats && (
+        <div className="group-stats-section" style={{ marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Users size={16} className="text-accent" />
+            <span>My Group's Performance Statistics</span>
+          </h3>
+          <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="stat-icon-wrapper" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-color)', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FileText size={22} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{groupStats.total}</span>
+                <span className="stat-label" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Total Group Complaints</span>
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="stat-icon-wrapper" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Clock size={22} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{groupStats.active + groupStats.pending}</span>
+                <span className="stat-label" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Group In Progress</span>
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle size={22} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{groupStats.resolved}</span>
+                <span className="stat-label" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Group Resolved</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Dashboard Control Toolbar */}
       <div className="db-customizer-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>

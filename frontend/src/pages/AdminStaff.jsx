@@ -61,7 +61,9 @@ const AdminStaff = () => {
       escalationAnalytics: true,
       manageFields: true,
       manageStaff: false,
-      manageDepartments: true
+      manageDepartments: true,
+      resolveComplaints: true,
+      escalateAnywhere: false
     };
     if (selectedAdminId === admin._id) {
       setSelectedAdminId(null);
@@ -609,6 +611,26 @@ const AdminStaff = () => {
                                 className="as-permission-checkbox"
                               />
                               <span>Manage Departments</span>
+                            </label>
+
+                            <label className="as-permission-checkbox-label">
+                              <input 
+                                type="checkbox"
+                                checked={selectedPermissions.resolveComplaints}
+                                onChange={(e) => setSelectedPermissions({ ...selectedPermissions, resolveComplaints: e.target.checked })}
+                                className="as-permission-checkbox"
+                              />
+                              <span>Resolve Complaints</span>
+                            </label>
+
+                            <label className="as-permission-checkbox-label">
+                              <input 
+                                type="checkbox"
+                                checked={selectedPermissions.escalateAnywhere}
+                                onChange={(e) => setSelectedPermissions({ ...selectedPermissions, escalateAnywhere: e.target.checked })}
+                                className="as-permission-checkbox"
+                              />
+                              <span>Escalate to any Department / Group</span>
                             </label>
                           </div>
 

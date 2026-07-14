@@ -67,7 +67,9 @@ const UserSchema = new mongoose.Schema({
     escalationAnalytics: { type: Boolean, default: true },
     manageFields: { type: Boolean, default: true },
     manageStaff: { type: Boolean, default: false },
-    manageDepartments: { type: Boolean, default: true }
+    manageDepartments: { type: Boolean, default: true },
+    resolveComplaints: { type: Boolean, default: true },
+    escalateAnywhere: { type: Boolean, default: false }
   },
   createdAt: {
     type: Date,

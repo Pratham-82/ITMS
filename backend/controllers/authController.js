@@ -236,7 +236,9 @@ const createAdmin = async (req, res) => {
         escalationAnalytics: true,
         manageFields: true,
         manageStaff: false,
-        manageDepartments: true
+        manageDepartments: true,
+        resolveComplaints: true,
+        escalateAnywhere: false
       }
     });
 
@@ -405,7 +407,7 @@ const updateAdminPermissions = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User is not an administrator' });
     }
 
-    if (req.body.settingsPermissions) {
+     if (req.body.settingsPermissions) {
       admin.settingsPermissions = {
         allowAll: req.body.settingsPermissions.allowAll !== undefined ? req.body.settingsPermissions.allowAll : admin.settingsPermissions.allowAll,
         systemSettings: req.body.settingsPermissions.systemSettings !== undefined ? req.body.settingsPermissions.systemSettings : admin.settingsPermissions.systemSettings,
@@ -414,7 +416,9 @@ const updateAdminPermissions = async (req, res) => {
         escalationAnalytics: req.body.settingsPermissions.escalationAnalytics !== undefined ? req.body.settingsPermissions.escalationAnalytics : admin.settingsPermissions.escalationAnalytics,
         manageFields: req.body.settingsPermissions.manageFields !== undefined ? req.body.settingsPermissions.manageFields : admin.settingsPermissions.manageFields,
         manageStaff: req.body.settingsPermissions.manageStaff !== undefined ? req.body.settingsPermissions.manageStaff : admin.settingsPermissions.manageStaff,
-        manageDepartments: req.body.settingsPermissions.manageDepartments !== undefined ? req.body.settingsPermissions.manageDepartments : admin.settingsPermissions.manageDepartments
+        manageDepartments: req.body.settingsPermissions.manageDepartments !== undefined ? req.body.settingsPermissions.manageDepartments : admin.settingsPermissions.manageDepartments,
+        resolveComplaints: req.body.settingsPermissions.resolveComplaints !== undefined ? req.body.settingsPermissions.resolveComplaints : admin.settingsPermissions.resolveComplaints,
+        escalateAnywhere: req.body.settingsPermissions.escalateAnywhere !== undefined ? req.body.settingsPermissions.escalateAnywhere : admin.settingsPermissions.escalateAnywhere
       };
       admin.markModified('settingsPermissions');
     }
@@ -551,7 +555,9 @@ const createUser = async (req, res) => {
         escalationAnalytics: true,
         manageFields: true,
         manageStaff: false,
-        manageDepartments: true
+        manageDepartments: true,
+        resolveComplaints: true,
+        escalateAnywhere: false
       } : undefined
     });
 

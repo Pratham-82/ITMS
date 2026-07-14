@@ -327,10 +327,22 @@ class TicketService {
       (user.groups && user.groups.length > 0 && user.groups.some(g => g.department && (g.department.name === 'General Administration' || g.department === 'General Administration' || (g.department._id && g.department.name === 'General Administration')))) ||
       ((!user.groups || user.groups.length === 0) && (!user.department || user.department === 'General Administration'))
     );
-    if (!isSuperAdmin && assignedTo) {
-      const allowedDepts = (user.groups || []).map(g => g.department && (g.department.name || g.department.toString())).filter(Boolean);
-      if (!allowedDepts.includes(assignedTo)) {
-        throw new Error('Support staff can only assign complaints to departments associated with their assigned groups/teams');
+
+    // Validate resolve permission
+    if (status === 'Resolved' && !isSuperAdmin) {
+      const canResolve = user.settingsPermissions && user.settingsPermissions.resolveComplaints !== false;
+      if (!canResolve) {
+        throw new Error('You do not have permission to resolve complaints');
+      }
+    }
+
+    if (!isSuperAdmin && assignedTo && assignedTo !== ticket.assignedDepartment) {
+      const canEscalateAnywhere = user.settingsPermissions && user.settingsPermissions.escalateAnywhere === true;
+      if (!canEscalateAnywhere) {
+        const allowedDepts = (user.groups || []).map(g => g.department && (g.department.name || g.department.toString())).filter(Boolean);
+        if (!allowedDepts.includes(assignedTo)) {
+          throw new Error('Support staff can only assign complaints to departments associated with their assigned groups/teams');
+        }
       }
     }
 

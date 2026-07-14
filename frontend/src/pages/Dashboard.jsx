@@ -446,6 +446,7 @@ const Dashboard = () => {
     />
   ) : (
     <CitizenDashboard 
+      complaints={complaints}
       stats={stats}
       navigate={navigate}
       citizenAssets={citizenAssets}
@@ -458,113 +459,347 @@ const Dashboard = () => {
 // CITIZEN DASHBOARD
 // ==========================================
 const CitizenDashboard = ({ 
+  complaints = [],
   stats, 
   navigate,
   citizenAssets = [],
   user
 }) => {
+  // 1. Calculate status distribution for Doughnut chart
+  const pendingCount = complaints.filter(c => c.status === 'Pending').length;
+  const inProgressCount = complaints.filter(c => ['Investigating', 'Assigned', 'Escalated', 'Reopen Requested', 'On Hold'].includes(c.status)).length;
+  const resolvedCount = complaints.filter(c => ['Resolved', 'Awaiting Feedback', 'Closed'].includes(c.status)).length;
+  const rejectedCount = complaints.filter(c => c.status === 'Rejected').length;
+
+  const statusChartData = {
+    labels: ['Pending', 'In Progress', 'Resolved', 'Rejected'],
+    datasets: [{
+      data: [pendingCount, inProgressCount, resolvedCount, rejectedCount],
+      backgroundColor: [
+        'rgba(99, 102, 241, 0.7)',
+        'rgba(245, 158, 11, 0.7)',
+        'rgba(16, 185, 129, 0.7)',
+        'rgba(239, 68, 68, 0.7)'
+      ],
+      borderColor: [
+        'rgba(99, 102, 241, 1)',
+        'rgba(245, 158, 11, 1)',
+        'rgba(16, 185, 129, 1)',
+        'rgba(239, 68, 68, 1)'
+      ],
+      borderWidth: 1
+    }]
+  };
+
+  // 2. Calculate category distribution for Bar chart
+  const categoryCounts = {};
+  complaints.forEach(c => {
+    const catName = c.categoryName || c.category?.name || 'General';
+    categoryCounts[catName] = (categoryCounts[catName] || 0) + 1;
+  });
+  
+  const categoryLabels = Object.keys(categoryCounts);
+  const categoryData = Object.values(categoryCounts);
+
+  const categoryChartData = {
+    labels: categoryLabels,
+    datasets: [{
+      label: 'Complaints by Category',
+      data: categoryData,
+      backgroundColor: 'rgba(168, 85, 247, 0.7)',
+      borderColor: 'rgba(168, 85, 247, 1)',
+      borderWidth: 1
+    }]
+  };
+
+  // Chart options
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: {
+          color: 'var(--text-secondary)',
+          font: { family: 'Plus Jakarta Sans', size: 10 }
+        }
+      }
+    }
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: 'var(--text-secondary)', font: { family: 'Plus Jakarta Sans', size: 10 } }
+      },
+      y: {
+        grid: { color: 'var(--border-color)' },
+        ticks: { color: 'var(--text-secondary)', font: { family: 'Plus Jakarta Sans', size: 10 } }
+      }
+    }
+  };
+
+  // Get 3 most recent complaints
+  const recentComplaints = complaints
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3);
+
   return (
     <div className="db-container">
+      {/* Welcome Banner */}
+      <div className="welcome-banner" style={{
+        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
+        border: '1px solid var(--border-color)',
+        borderRadius: '16px',
+        padding: '24px',
+        marginBottom: '24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>Welcome back, {user?.name || 'Citizen'}!</h1>
+          <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Track your active IT service requests, view your registered assets, or submit new service requests.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            className="btn btn-primary"
+            onClick={() => navigate('/file-complaint')}
+            style={{
+              background: 'linear-gradient(135deg, var(--accent-color) 0%, #7c3aed 100%)',
+              border: 'none',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <LucideIcons.FilePlus size={16} />
+            <span>File a Complaint</span>
+          </button>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => navigate('/service-portal')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <LucideIcons.Folder size={16} />
+            <span>Service Catalog</span>
+          </button>
+        </div>
+      </div>
+
       {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon-wrapper db-stat-icon-indigo">
+      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="stat-icon-wrapper db-stat-icon-indigo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <FileText size={22} />
           </div>
           <div className="stat-info">
-            <span className="stat-value">{stats.total}</span>
+            <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800 }}>{stats.total}</span>
             <span className="stat-label">Total Filed</span>
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon-wrapper db-stat-icon-pending">
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="stat-icon-wrapper db-stat-icon-pending" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Clock size={22} />
           </div>
           <div className="stat-info">
-            <span className="stat-value">{stats.pending + stats.active}</span>
+            <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800 }}>{stats.pending + stats.active}</span>
             <span className="stat-label">In Progress</span>
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon-wrapper db-stat-icon-resolved">
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="stat-icon-wrapper db-stat-icon-resolved" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CheckCircle size={22} />
           </div>
           <div className="stat-info">
-            <span className="stat-value">{stats.resolved}</span>
+            <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800 }}>{stats.resolved}</span>
             <span className="stat-label">Resolved</span>
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="stat-icon-wrapper" style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LucideIcons.Laptop size={22} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800 }}>{citizenAssets.length}</span>
+            <span className="stat-label">My Registered Assets</span>
           </div>
         </div>
       </div>
 
-      {/* Citizen Registered Assets Panel */}
-      <div className="dashboard-panel" style={{ marginTop: '24px' }}>
-        <div className="panel-header">
-          <h2 className="panel-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent" style={{ color: 'var(--accent-color)' }}>
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-              <line x1="12" y1="22.08" x2="12" y2="12" />
-            </svg>
-            <span>My Registered Assets ({citizenAssets.length})</span>
-          </h2>
+      {/* Charts & Graphs Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+        {/* Status Doughnut Chart */}
+        <div className="dashboard-panel" style={{ height: '320px', display: 'flex', flexDirection: 'column' }}>
+          <div className="panel-header" style={{ marginBottom: '16px' }}>
+            <h2 className="panel-title">
+              <LucideIcons.Activity size={16} className="text-accent" />
+              <span>Complaint Status Breakdown</span>
+            </h2>
+          </div>
+          <div style={{ flex: 1, position: 'relative', height: '220px' }}>
+            {complaints.length === 0 ? (
+              <div className="db-table-empty">No complaints submitted yet.</div>
+            ) : (
+              <Doughnut 
+                data={statusChartData} 
+                options={doughnutOptions}
+              />
+            )}
+          </div>
         </div>
+
+        {/* Categories Bar Chart */}
+        <div className="dashboard-panel" style={{ height: '320px', display: 'flex', flexDirection: 'column' }}>
+          <div className="panel-header" style={{ marginBottom: '16px' }}>
+            <h2 className="panel-title">
+              <LucideIcons.BarChart3 size={16} className="text-accent" />
+              <span>Category Distribution</span>
+            </h2>
+          </div>
+          <div style={{ flex: 1, position: 'relative', height: '220px' }}>
+            {complaints.length === 0 ? (
+              <div className="db-table-empty">No complaints submitted yet.</div>
+            ) : (
+              <Bar 
+                data={categoryChartData} 
+                options={barOptions}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Two Column Layout for Registered Assets and Recent Activity */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         
-        {citizenAssets.length === 0 ? (
-          <div className="db-table-empty">
-            No assets registered or linked to your email ({user?.email}).
+        {/* Citizen Registered Assets Panel */}
+        <div className="dashboard-panel">
+          <div className="panel-header">
+            <h2 className="panel-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent" style={{ color: 'var(--accent-color)' }}>
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+              <span>My Registered Assets ({citizenAssets.length})</span>
+            </h2>
           </div>
-        ) : (
-          <div className="table-container">
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  <th>Asset Code</th>
-                  <th>Name</th>
-                  <th>Category & Type</th>
-                  <th>Status</th>
-                  <th>Location</th>
-                  <th>Role</th>
-                </tr>
-              </thead>
-              <tbody>
-                {citizenAssets.map((asset) => {
-                  const isOwner = asset.ownerEmail?.toLowerCase() === user?.email?.toLowerCase() || asset.ownerUserId?._id === user?._id || asset.ownerUserId === user?._id;
-                  return (
-                    <tr key={asset._id} style={{ cursor: 'default' }}>
-                      <td className="detail-id">{asset.assetCode}</td>
-                      <td style={{ fontWeight: 600 }}>{asset.name}</td>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>{asset.assetTypeId?.name || 'Unknown Type'}</div>
-                        <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>{asset.categoryId?.name}</div>
-                      </td>
-                      <td>
-                        <span className={`badge`} style={{
-                          backgroundColor: asset.status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                          color: asset.status === 'Active' ? '#10b981' : '#f59e0b',
-                          border: `1px solid ${asset.status === 'Active' ? '#10b98130' : '#f59e0b30'}`
-                        }}>
-                          {asset.status}
-                        </span>
-                      </td>
-                      <td>{asset.location || 'N/A'}</td>
-                      <td>
-                        <span className="badge" style={{
-                          backgroundColor: isOwner ? 'rgba(99, 102, 241, 0.1)' : 'rgba(14, 165, 233, 0.1)',
-                          color: isOwner ? 'var(--accent-color)' : '#0ea5e9',
-                          border: `1px solid ${isOwner ? 'rgba(99, 102, 241, 0.2)' : 'rgba(14, 165, 233, 0.2)'}`
-                        }}>
-                          {isOwner ? 'Primary Owner' : 'Secondary Custodian'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          
+          {citizenAssets.length === 0 ? (
+            <div className="db-table-empty">
+              No assets registered or linked to your email ({user?.email}).
+            </div>
+          ) : (
+            <div className="table-container" style={{ marginTop: '12px' }}>
+              <table className="custom-table">
+                <thead>
+                  <tr>
+                    <th>Asset Code</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {citizenAssets.map((asset) => {
+                    const isOwner = asset.ownerEmail?.toLowerCase() === user?.email?.toLowerCase() || asset.ownerUserId?._id === user?._id || asset.ownerUserId === user?._id;
+                    return (
+                      <tr key={asset._id} style={{ cursor: 'default' }}>
+                        <td className="detail-id">{asset.assetCode}</td>
+                        <td style={{ fontWeight: 600 }}>{asset.name}</td>
+                        <td>
+                          <div style={{ fontWeight: 650 }}>{asset.assetTypeId?.name || 'Device'}</div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{asset.categoryId?.name}</div>
+                        </td>
+                        <td>
+                          <span className={`badge`} style={{
+                            backgroundColor: asset.status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                            color: asset.status === 'Active' ? '#10b981' : '#f59e0b',
+                            border: `1px solid ${asset.status === 'Active' ? '#10b98130' : '#f59e0b30'}`
+                          }}>
+                            {asset.status}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="badge" style={{
+                            backgroundColor: isOwner ? 'rgba(99, 102, 241, 0.1)' : 'rgba(14, 165, 233, 0.1)',
+                            color: isOwner ? 'var(--accent-color)' : '#0ea5e9',
+                            border: `1px solid ${isOwner ? 'rgba(99, 102, 241, 0.2)' : 'rgba(14, 165, 233, 0.2)'}`
+                          }}>
+                            {isOwner ? 'Owner' : 'Custodian'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Tickets Panel */}
+        <div className="dashboard-panel">
+          <div className="panel-header">
+            <h2 className="panel-title">
+              <Inbox size={16} className="text-accent" />
+              <span>Recent Activity ({recentComplaints.length})</span>
+            </h2>
           </div>
-        )}
+          {recentComplaints.length === 0 ? (
+            <div className="db-table-empty">You have not submitted any complaints yet.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+              {recentComplaints.map(c => (
+                <div 
+                  key={c._id} 
+                  onClick={() => navigate(`/complaints/${c._id}`)} 
+                  style={{
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '10.5px',
+                    padding: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  className="recent-complaint-item"
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-color)' }}>{c.trackingId}</span>
+                    <span className="badge" style={{
+                      backgroundColor: c.status === 'Resolved' || c.status === 'Closed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                      color: c.status === 'Resolved' || c.status === 'Closed' ? '#10b981' : '#f59e0b'
+                    }}>{c.status}</span>
+                  </div>
+                  <div style={{ fontWeight: 650, fontSize: '13.5px', color: 'var(--text-primary)', marginBottom: '4px' }}>{c.title}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Filed on: {new Date(c.createdAt).toLocaleDateString()}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

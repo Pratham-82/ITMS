@@ -465,28 +465,51 @@ const CitizenDashboard = ({
   citizenAssets = [],
   user
 }) => {
-  // 1. Calculate status distribution for Doughnut chart
-  const pendingCount = complaints.filter(c => c.status === 'Pending').length;
-  const inProgressCount = complaints.filter(c => ['Investigating', 'Assigned', 'Escalated', 'Reopen Requested', 'On Hold'].includes(c.status)).length;
-  const resolvedCount = complaints.filter(c => ['Resolved', 'Awaiting Feedback', 'Closed'].includes(c.status)).length;
-  const rejectedCount = complaints.filter(c => c.status === 'Rejected').length;
+  // 1. Calculate status distribution dynamically for Doughnut chart
+  const statusCounts = {};
+  complaints.forEach(c => {
+    const s = c.status || 'Pending';
+    statusCounts[s] = (statusCounts[s] || 0) + 1;
+  });
+
+  const statusLabels = Object.keys(statusCounts);
+  const statusData = Object.values(statusCounts);
+
+  const statusColors = {
+    'Pending': 'rgba(99, 102, 241, 0.7)',             // Indigo
+    'Assigned': 'rgba(59, 130, 246, 0.7)',            // Blue
+    'Investigating': 'rgba(139, 92, 246, 0.7)',       // Purple
+    'On Hold': 'rgba(245, 158, 11, 0.7)',             // Amber
+    'Escalated': 'rgba(236, 72, 153, 0.7)',            // Pink
+    'Resolved': 'rgba(16, 185, 129, 0.7)',            // Emerald
+    'Awaiting Feedback': 'rgba(45, 212, 191, 0.7)',   // Teal
+    'Closed': 'rgba(107, 114, 128, 0.7)',             // Gray
+    'Rejected': 'rgba(239, 68, 68, 0.7)',             // Red
+    'Reopen Requested': 'rgba(244, 63, 94, 0.7)'       // Rose
+  };
+
+  const statusBorderColors = {
+    'Pending': 'rgba(99, 102, 241, 1)',
+    'Assigned': 'rgba(59, 130, 246, 1)',
+    'Investigating': 'rgba(139, 92, 246, 1)',
+    'On Hold': 'rgba(245, 158, 11, 1)',
+    'Escalated': 'rgba(236, 72, 153, 1)',
+    'Resolved': 'rgba(16, 185, 129, 1)',
+    'Awaiting Feedback': 'rgba(45, 212, 191, 1)',
+    'Closed': 'rgba(107, 114, 128, 1)',
+    'Rejected': 'rgba(239, 68, 68, 1)',
+    'Reopen Requested': 'rgba(244, 63, 94, 1)'
+  };
+
+  const backgroundColors = statusLabels.map(label => statusColors[label] || 'rgba(99, 102, 241, 0.7)');
+  const borderColors = statusLabels.map(label => statusBorderColors[label] || 'rgba(99, 102, 241, 1)');
 
   const statusChartData = {
-    labels: ['Pending', 'In Progress', 'Resolved', 'Rejected'],
+    labels: statusLabels,
     datasets: [{
-      data: [pendingCount, inProgressCount, resolvedCount, rejectedCount],
-      backgroundColor: [
-        'rgba(99, 102, 241, 0.7)',
-        'rgba(245, 158, 11, 0.7)',
-        'rgba(16, 185, 129, 0.7)',
-        'rgba(239, 68, 68, 0.7)'
-      ],
-      borderColor: [
-        'rgba(99, 102, 241, 1)',
-        'rgba(245, 158, 11, 1)',
-        'rgba(16, 185, 129, 1)',
-        'rgba(239, 68, 68, 1)'
-      ],
+      data: statusData,
+      backgroundColor: backgroundColors,
+      borderColor: borderColors,
       borderWidth: 1
     }]
   };

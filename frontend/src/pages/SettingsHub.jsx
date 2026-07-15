@@ -1364,16 +1364,16 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
         const ticketsWithRatings = liveData.tickets.filter(t => typeof t.rating === 'number' && t.rating > 0);
         const csatScoreVal = ticketsWithRatings.length > 0 
           ? (ticketsWithRatings.reduce((sum, t) => sum + t.rating, 0) / ticketsWithRatings.length).toFixed(1)
-          : '4.7';
+          : 'N/A';
 
         const duplicateRateVal = liveData.tickets.length > 0
           ? ((liveData.duplicateAudits.length / liveData.tickets.length) * 100).toFixed(1) + '%'
           : '0.0%';
 
-        const breachesCountVal = liveData.tickets.filter(t => t.responseSlaStatus === 'Breached' || t.resolutionSlaStatus === 'Breached').length || 23;
+        const breachesCountVal = liveData.tickets.filter(t => t.responseSlaStatus === 'Breached' || t.resolutionSlaStatus === 'Breached' || (t.totalBreachCount && t.totalBreachCount > 0)).length;
 
         const resolvedTickets = liveData.tickets.filter(t => t.resolvedAt);
-        let avgHoursVal = '8.4 hrs';
+        let avgHoursVal = 'N/A';
         if (resolvedTickets.length > 0) {
           const totalMs = resolvedTickets.reduce((sum, t) => sum + (new Date(t.resolvedAt) - new Date(t.createdAt)), 0);
           avgHoursVal = (totalMs / (resolvedTickets.length * 60 * 60 * 1000)).toFixed(1) + ' hrs';
@@ -1387,35 +1387,26 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
         let dissatisfiedCount = 0;
         let veryDissatisfiedCount = 0;
 
-        if (totalReviews > 0) {
-          ticketsWithRatings.forEach(t => {
-            if (t.rating === 5) verySatisfiedCount++;
-            else if (t.rating === 4) satisfiedCount++;
-            else if (t.rating === 3) neutralCount++;
-            else if (t.rating === 2) dissatisfiedCount++;
-            else if (t.rating === 1) veryDissatisfiedCount++;
-          });
-        } else {
-          totalReviews = 246;
-          verySatisfiedCount = 191;
-          satisfiedCount = 39;
-          neutralCount = 10;
-          dissatisfiedCount = 4;
-          veryDissatisfiedCount = 2;
-        }
+        ticketsWithRatings.forEach(t => {
+          if (t.rating === 5) verySatisfiedCount++;
+          else if (t.rating === 4) satisfiedCount++;
+          else if (t.rating === 3) neutralCount++;
+          else if (t.rating === 2) dissatisfiedCount++;
+          else if (t.rating === 1) veryDissatisfiedCount++;
+        });
 
-        const verySatisfiedPct = ((verySatisfiedCount / totalReviews) * 100).toFixed(1);
-        const satisfiedPct = ((satisfiedCount / totalReviews) * 100).toFixed(1);
-        const neutralPct = ((neutralCount / totalReviews) * 100).toFixed(1);
-        const dissatisfiedPct = ((dissatisfiedCount / totalReviews) * 100).toFixed(1);
-        const veryDissatisfiedPct = ((veryDissatisfiedCount / totalReviews) * 100).toFixed(1);
+        const verySatisfiedPct = totalReviews > 0 ? ((verySatisfiedCount / totalReviews) * 100).toFixed(1) : '0.0';
+        const satisfiedPct = totalReviews > 0 ? ((satisfiedCount / totalReviews) * 100).toFixed(1) : '0.0';
+        const neutralPct = totalReviews > 0 ? ((neutralCount / totalReviews) * 100).toFixed(1) : '0.0';
+        const dissatisfiedPct = totalReviews > 0 ? ((dissatisfiedCount / totalReviews) * 100).toFixed(1) : '0.0';
+        const veryDissatisfiedPct = totalReviews > 0 ? ((veryDissatisfiedCount / totalReviews) * 100).toFixed(1) : '0.0';
 
         const totalCircumference = 251.2;
-        const vsDash = (verySatisfiedCount / totalReviews) * totalCircumference;
-        const sDash = (satisfiedCount / totalReviews) * totalCircumference;
-        const nDash = (neutralCount / totalReviews) * totalCircumference;
-        const dDash = (dissatisfiedCount / totalReviews) * totalCircumference;
-        const vdDash = (veryDissatisfiedCount / totalReviews) * totalCircumference;
+        const vsDash = totalReviews > 0 ? (verySatisfiedCount / totalReviews) * totalCircumference : 0;
+        const sDash = totalReviews > 0 ? (satisfiedCount / totalReviews) * totalCircumference : 0;
+        const nDash = totalReviews > 0 ? (neutralCount / totalReviews) * totalCircumference : 0;
+        const dDash = totalReviews > 0 ? (dissatisfiedCount / totalReviews) * totalCircumference : 0;
+        const vdDash = totalReviews > 0 ? (veryDissatisfiedCount / totalReviews) * totalCircumference : 0;
 
         const vsOffset = 0;
         const sOffset = -vsDash;
@@ -1444,8 +1435,10 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
               <div className="sh-metric-card-custom">
                 <div className="sh-metric-card-left">
                   <span className="sh-metric-card-label">CSAT Score</span>
-                  <span className="sh-metric-card-val">{csatScoreVal} / 5.0</span>
-                  <span className="sh-metric-card-sublabel" style={{ color: '#10b981', fontWeight: 700 }}>Excellent</span>
+                  <span className="sh-metric-card-val">{csatScoreVal === 'N/A' ? 'N/A' : `${csatScoreVal} / 5.0`}</span>
+                  <span className="sh-metric-card-sublabel" style={{ color: csatScoreVal === 'N/A' ? 'var(--text-muted)' : '#10b981', fontWeight: 700 }}>
+                    {csatScoreVal === 'N/A' ? 'No reviews' : parseFloat(csatScoreVal) >= 4.0 ? 'Excellent' : 'Good'}
+                  </span>
                 </div>
                 <div className="sh-metric-icon-box" style={{ backgroundColor: 'rgba(99, 102, 241, 0.06)', color: 'var(--accent-color)' }}>
                   <Star size={22} />
@@ -1455,7 +1448,9 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                 <div className="sh-metric-card-left">
                   <span className="sh-metric-card-label">Duplicate Rate</span>
                   <span className="sh-metric-card-val">{duplicateRateVal}</span>
-                  <span className="sh-metric-card-sublabel" style={{ color: '#10b981', fontWeight: 700 }}>-0.8%</span>
+                  <span className="sh-metric-card-sublabel" style={{ color: 'var(--text-muted)' }}>
+                    {liveData.duplicateAudits.length} duplicates found
+                  </span>
                 </div>
                 <div className="sh-metric-icon-box" style={{ backgroundColor: 'rgba(16, 185, 129, 0.06)', color: '#10b981' }}>
                   <Copy size={22} />
@@ -1465,7 +1460,9 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                 <div className="sh-metric-card-left">
                   <span className="sh-metric-card-label">SLA Breaches</span>
                   <span className="sh-metric-card-val">{breachesCountVal}</span>
-                  <span className="sh-metric-card-sublabel" style={{ color: '#ef4444', fontWeight: 700 }}>+2</span>
+                  <span className="sh-metric-card-sublabel" style={{ color: breachesCountVal > 0 ? '#ef4444' : '#10b981', fontWeight: 700 }}>
+                    {breachesCountVal > 0 ? 'Breaches recorded' : 'All compliant'}
+                  </span>
                 </div>
                 <div className="sh-metric-icon-box" style={{ backgroundColor: 'rgba(239, 68, 68, 0.06)', color: '#ef4444' }}>
                   <ShieldAlert size={22} />
@@ -1475,7 +1472,9 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                 <div className="sh-metric-card-left">
                   <span className="sh-metric-card-label">Avg. Resolution Time</span>
                   <span className="sh-metric-card-val">{avgHoursVal}</span>
-                  <span className="sh-metric-card-sublabel" style={{ color: '#10b981', fontWeight: 700 }}>-1.2 hrs</span>
+                  <span className="sh-metric-card-sublabel" style={{ color: 'var(--text-muted)' }}>
+                    {resolvedTickets.length > 0 ? 'Based on resolved cases' : 'No resolved cases'}
+                  </span>
                 </div>
                 <div className="sh-metric-icon-box" style={{ backgroundColor: 'rgba(245, 158, 11, 0.06)', color: '#f59e0b' }}>
                   <Activity size={22} />

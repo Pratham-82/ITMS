@@ -36,65 +36,57 @@ const CsatAnalytics = ({ startDate, endDate, showCustomizer }) => {
 
   // Customizer visible elements state
   const [visibleWidgets, setVisibleWidgets] = useState(() => {
+    const defaults = {
+      csatScore: true,
+      avgRating: true,
+      reopenRate: true,
+      responseRate: true,
+      trendsChart: true,
+      dimensionAverages: true,
+      deptRankings: true,
+      catRankings: true,
+      negativeAlerts: true,
+      recentFeedback: true
+    };
     try {
       const saved = localStorage.getItem('apexresolve_custom_csat_visible');
-      return saved ? JSON.parse(saved) : {
-        csatScore: true,
-        avgRating: true,
-        reopenRate: true,
-        responseRate: true,
-        trendsChart: true,
-        dimensionAverages: true,
-        deptRankings: true,
-        catRankings: true,
-        negativeAlerts: true,
-        recentFeedback: true
-      };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return { ...defaults, ...parsed };
+        }
+      }
+      return defaults;
     } catch {
-      return {
-        csatScore: true,
-        avgRating: true,
-        reopenRate: true,
-        responseRate: true,
-        trendsChart: true,
-        dimensionAverages: true,
-        deptRankings: true,
-        catRankings: true,
-        negativeAlerts: true,
-        recentFeedback: true
-      };
+      return defaults;
     }
   });
 
   // Customizer widget titles state
   const [widgetTitles, setWidgetTitles] = useState(() => {
+    const defaults = {
+      csatScore: 'Overall CSAT Score',
+      avgRating: 'Rating & Net Positive Feedback',
+      reopenRate: 'Reopen Rate & Resolution',
+      responseRate: 'Recommend Service Rate',
+      trendsChart: 'Monthly CSAT Rating Trends',
+      dimensionAverages: 'CSAT Dimension Averages',
+      deptRankings: 'Department Satisfaction Rankings',
+      catRankings: 'Category Satisfaction Rankings',
+      negativeAlerts: 'Negative Feedback Alerts (1-2 Stars)',
+      recentFeedback: 'Recent Citizen Comments'
+    };
     try {
       const saved = localStorage.getItem('apexresolve_custom_csat_titles');
-      return saved ? JSON.parse(saved) : {
-        csatScore: 'Overall CSAT Score',
-        avgRating: 'Rating & Net Positive Feedback',
-        reopenRate: 'Reopen Rate & Resolution',
-        responseRate: 'Recommend Service Rate',
-        trendsChart: 'Monthly CSAT Rating Trends',
-        dimensionAverages: 'CSAT Dimension Averages',
-        deptRankings: 'Department Satisfaction Rankings',
-        catRankings: 'Category Satisfaction Rankings',
-        negativeAlerts: 'Negative Feedback Alerts (1-2 Stars)',
-        recentFeedback: 'Recent Citizen Comments'
-      };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return { ...defaults, ...parsed };
+        }
+      }
+      return defaults;
     } catch {
-      return {
-        csatScore: 'Overall CSAT Score',
-        avgRating: 'Rating & Net Positive Feedback',
-        reopenRate: 'Reopen Rate & Resolution',
-        responseRate: 'Recommend Service Rate',
-        trendsChart: 'Monthly CSAT Rating Trends',
-        dimensionAverages: 'CSAT Dimension Averages',
-        deptRankings: 'Department Satisfaction Rankings',
-        catRankings: 'Category Satisfaction Rankings',
-        negativeAlerts: 'Negative Feedback Alerts (1-2 Stars)',
-        recentFeedback: 'Recent Citizen Comments'
-      };
+      return defaults;
     }
   });
 

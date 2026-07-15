@@ -34,53 +34,51 @@ const EscalationAnalytics = ({ complaints: propComplaints }) => {
 
   // Customizer visible elements state
   const [visibleWidgets, setVisibleWidgets] = useState(() => {
+    const defaults = {
+      totalEscalated: true,
+      autoBreaches: true,
+      manualOverrides: true,
+      complianceRate: true,
+      deptChart: true,
+      catChart: true,
+      recentTable: true
+    };
     try {
       const saved = localStorage.getItem('apexresolve_custom_sla_visible');
-      return saved ? JSON.parse(saved) : {
-        totalEscalated: true,
-        autoBreaches: true,
-        manualOverrides: true,
-        complianceRate: true,
-        deptChart: true,
-        catChart: true,
-        recentTable: true
-      };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return { ...defaults, ...parsed };
+        }
+      }
+      return defaults;
     } catch {
-      return {
-        totalEscalated: true,
-        autoBreaches: true,
-        manualOverrides: true,
-        complianceRate: true,
-        deptChart: true,
-        catChart: true,
-        recentTable: true
-      };
+      return defaults;
     }
   });
 
   // Customizer widget titles state
   const [widgetTitles, setWidgetTitles] = useState(() => {
+    const defaults = {
+      totalEscalated: 'Total Escalated',
+      autoBreaches: 'Automated SLA Breaches',
+      manualOverrides: 'Manual Overrides',
+      complianceRate: 'SLA Compliance Rate',
+      deptChart: 'Escalations Received by Department',
+      catChart: 'Escalation Share by Category',
+      recentTable: 'Recent Escalated Complaints'
+    };
     try {
       const saved = localStorage.getItem('apexresolve_custom_sla_titles');
-      return saved ? JSON.parse(saved) : {
-        totalEscalated: 'Total Escalated',
-        autoBreaches: 'Automated SLA Breaches',
-        manualOverrides: 'Manual Overrides',
-        complianceRate: 'SLA Compliance Rate',
-        deptChart: 'Escalations Received by Department',
-        catChart: 'Escalation Share by Category',
-        recentTable: 'Recent Escalated Complaints'
-      };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return { ...defaults, ...parsed };
+        }
+      }
+      return defaults;
     } catch {
-      return {
-        totalEscalated: 'Total Escalated',
-        autoBreaches: 'Automated SLA Breaches',
-        manualOverrides: 'Manual Overrides',
-        complianceRate: 'SLA Compliance Rate',
-        deptChart: 'Escalations Received by Department',
-        catChart: 'Escalation Share by Category',
-        recentTable: 'Recent Escalated Complaints'
-      };
+      return defaults;
     }
   });
 

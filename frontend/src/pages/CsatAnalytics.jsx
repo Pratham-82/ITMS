@@ -133,6 +133,10 @@ const CsatAnalytics = ({ startDate, endDate }) => {
         </div>
 
         <div className="csat-actions">
+          <button onClick={() => navigate('/settings?section=platform&tab=feedback-config')} className="btn-report" style={{ border: '1px solid var(--accent-color)', color: 'var(--accent-color)', background: 'transparent' }}>
+            <Star size={15} />
+            <span>Configure CSAT</span>
+          </button>
           <button onClick={() => handleOpenReport('lowSatisfaction')} className="btn-report">
             <AlertTriangle size={15} />
             <span>Low CSAT Report</span>

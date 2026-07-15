@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import '../styles/EscalationAnalytics.css';
 import { 
   TrendingUp, Clock, AlertTriangle, CheckCircle, 
-  ArrowRight, ShieldAlert, BarChart3, PieChart, RefreshCw
+  ArrowRight, ShieldAlert, BarChart3, PieChart, RefreshCw,
+  Settings
 } from 'lucide-react';
 
 // ChartJS imports
@@ -25,6 +27,7 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 const EscalationAnalytics = ({ complaints: propComplaints }) => {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const navigate = useNavigate();
 
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -204,13 +207,23 @@ const EscalationAnalytics = ({ complaints: propComplaints }) => {
             Real-time tracking of SLA breach frequencies, manual overflows, and department distribution.
           </p>
         </div>
-        <button
-          onClick={fetchComplaints}
-          className="btn btn-secondary"
-          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh Data
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => navigate('/settings?section=operations&tab=sla')}
+            className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--accent-color)', color: 'var(--accent-color)', background: 'transparent' }}
+          >
+            <Settings size={16} /> Configure SLA Rules
+          </button>
+          
+          <button
+            onClick={fetchComplaints}
+            className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh Data
+          </button>
+        </div>
       </div>
 
       {loading ? (

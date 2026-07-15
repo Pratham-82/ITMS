@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import '../styles/CsatAnalytics.css';
 
-const CsatAnalytics = ({ startDate, endDate }) => {
+const CsatAnalytics = ({ startDate, endDate, showCustomizer }) => {
   const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
@@ -33,6 +33,91 @@ const CsatAnalytics = ({ startDate, endDate }) => {
   // Modal Report States
   const [activeReport, setActiveReport] = useState(null); // 'monthly' | 'department' | 'lowSatisfaction' | 'reopened'
   const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // Customizer visible elements state
+  const [visibleWidgets, setVisibleWidgets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('apexresolve_custom_csat_visible');
+      return saved ? JSON.parse(saved) : {
+        csatScore: true,
+        avgRating: true,
+        reopenRate: true,
+        responseRate: true,
+        trendsChart: true,
+        dimensionAverages: true,
+        deptRankings: true,
+        catRankings: true,
+        negativeAlerts: true,
+        recentFeedback: true
+      };
+    } catch {
+      return {
+        csatScore: true,
+        avgRating: true,
+        reopenRate: true,
+        responseRate: true,
+        trendsChart: true,
+        dimensionAverages: true,
+        deptRankings: true,
+        catRankings: true,
+        negativeAlerts: true,
+        recentFeedback: true
+      };
+    }
+  });
+
+  // Customizer widget titles state
+  const [widgetTitles, setWidgetTitles] = useState(() => {
+    try {
+      const saved = localStorage.getItem('apexresolve_custom_csat_titles');
+      return saved ? JSON.parse(saved) : {
+        csatScore: 'Overall CSAT Score',
+        avgRating: 'Rating & Net Positive Feedback',
+        reopenRate: 'Reopen Rate & Resolution',
+        responseRate: 'Recommend Service Rate',
+        trendsChart: 'Monthly CSAT Rating Trends',
+        dimensionAverages: 'CSAT Dimension Averages',
+        deptRankings: 'Department Satisfaction Rankings',
+        catRankings: 'Category Satisfaction Rankings',
+        negativeAlerts: 'Negative Feedback Alerts (1-2 Stars)',
+        recentFeedback: 'Recent Citizen Comments'
+      };
+    } catch {
+      return {
+        csatScore: 'Overall CSAT Score',
+        avgRating: 'Rating & Net Positive Feedback',
+        reopenRate: 'Reopen Rate & Resolution',
+        responseRate: 'Recommend Service Rate',
+        trendsChart: 'Monthly CSAT Rating Trends',
+        dimensionAverages: 'CSAT Dimension Averages',
+        deptRankings: 'Department Satisfaction Rankings',
+        catRankings: 'Category Satisfaction Rankings',
+        negativeAlerts: 'Negative Feedback Alerts (1-2 Stars)',
+        recentFeedback: 'Recent Citizen Comments'
+      };
+    }
+  });
+
+  const saveCustomization = (newVisible, newTitles) => {
+    localStorage.setItem('apexresolve_custom_csat_visible', JSON.stringify(newVisible));
+    localStorage.setItem('apexresolve_custom_csat_titles', JSON.stringify(newTitles));
+    localStorage.setItem('apexresolve_custom_csat', 'true');
+  };
+
+  const handleToggleWidget = (key) => {
+    const updated = { ...visibleWidgets, [key]: !visibleWidgets[key] };
+    setVisibleWidgets(updated);
+    saveCustomization(updated, widgetTitles);
+  };
+
+  const handleEditTitle = (key) => {
+    const newTitle = window.prompt(`Enter new title for "${widgetTitles[key]}":`, widgetTitles[key]);
+    if (newTitle !== null && newTitle.trim() !== '') {
+      const updated = { ...widgetTitles, [key]: newTitle.trim() };
+      setWidgetTitles(updated);
+      saveCustomization(visibleWidgets, updated);
+    }
+  };
 
   const fetchCsatData = async () => {
     try {
@@ -156,289 +241,408 @@ const CsatAnalytics = ({ startDate, endDate }) => {
         </div>
       </div>
 
+      {showCustomizer && (
+        <div className="dashboard-panel db-customizer-panel" style={{ padding: '16px 20px', marginBottom: '24px', animation: 'fadeIn 0.3s ease-out' }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800 }}>Customizer Mode: Toggle CSAT Widgets</h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+            {Object.keys(visibleWidgets).map(key => (
+              <label key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                <input 
+                  type="checkbox" 
+                  checked={visibleWidgets[key]} 
+                  onChange={() => handleToggleWidget(key)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>{widgetTitles[key]}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Main CSAT Stats Cards */}
       <div className="csat-overview-grid">
-        <div className="csat-card">
-          <Smile className="csat-card-icon" size={44} />
-          <span className="csat-card-title">Overall CSAT Score</span>
-          <div className="csat-card-value">{globalMetrics?.csatScore}%</div>
-          <span className="csat-card-sub">Percentage of 4 & 5 star ratings</span>
-        </div>
-
-        <div className="csat-card">
-          <Star className="csat-card-icon" size={44} />
-          <span className="csat-card-title">Average Overall Rating</span>
-          <div className="csat-card-value">
-            {globalMetrics?.avgOverallRating} <span style={{ fontSize: '16px', color: 'var(--text-muted)' }}>/ 5</span>
+        {visibleWidgets.csatScore && (
+          <div className="csat-card" style={{ position: 'relative' }}>
+            {showCustomizer && (
+              <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                <button onClick={() => handleEditTitle('csatScore')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                <button onClick={() => handleToggleWidget('csatScore')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+              </div>
+            )}
+            <Smile className="csat-card-icon" size={44} />
+            <span className="csat-card-title">{widgetTitles.csatScore}</span>
+            <div className="csat-card-value">{globalMetrics?.csatScore}%</div>
+            <span className="csat-card-sub">Percentage of 4 & 5 star ratings</span>
           </div>
-          {renderStars(globalMetrics?.avgOverallRating)}
-        </div>
+        )}
 
-        <div className="csat-card">
-          <ThumbsUp className="csat-card-icon" size={44} />
-          <span className="csat-card-title">Net Positive Feedback</span>
-          <div className="csat-card-value" style={{ color: netPositiveFeedback >= 0 ? '#10b981' : '#ef4444' }}>
-            {netPositiveFeedback > 0 ? `+${netPositiveFeedback}` : netPositiveFeedback}
+        {visibleWidgets.avgRating && (
+          <>
+            <div className="csat-card" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                  <button onClick={() => handleEditTitle('avgRating')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                  <button onClick={() => handleToggleWidget('avgRating')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                </div>
+              )}
+              <Star className="csat-card-icon" size={44} />
+              <span className="csat-card-title">{widgetTitles.avgRating}</span>
+              <div className="csat-card-value">
+                {globalMetrics?.avgOverallRating} <span style={{ fontSize: '16px', color: 'var(--text-muted)' }}>/ 5</span>
+              </div>
+              {renderStars(globalMetrics?.avgOverallRating)}
+            </div>
+
+            <div className="csat-card" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                  <button onClick={() => handleToggleWidget('avgRating')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                </div>
+              )}
+              <ThumbsUp className="csat-card-icon" size={44} />
+              <span className="csat-card-title">Net Positive Feedback</span>
+              <div className="csat-card-value" style={{ color: netPositiveFeedback >= 0 ? '#10b981' : '#ef4444' }}>
+                {netPositiveFeedback > 0 ? `+${netPositiveFeedback}` : netPositiveFeedback}
+              </div>
+              <span className="csat-card-sub">Positive ratings minus negative ratings</span>
+            </div>
+          </>
+        )}
+
+        {visibleWidgets.reopenRate && (
+          <>
+            <div className="csat-card" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                  <button onClick={() => handleEditTitle('reopenRate')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                  <button onClick={() => handleToggleWidget('reopenRate')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                </div>
+              )}
+              <TrendingUp className="csat-card-icon" size={44} />
+              <span className="csat-card-title">{widgetTitles.reopenRate}</span>
+              <div className="csat-card-value" style={{ color: globalMetrics?.reopenRate > 15 ? '#f59e0b' : 'inherit' }}>
+                {globalMetrics?.reopenRate}%
+              </div>
+              <span className="csat-card-sub">Resolved tickets citizen reopened</span>
+            </div>
+
+            <div className="csat-card" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                  <button onClick={() => handleToggleWidget('reopenRate')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                </div>
+              )}
+              <BarChart3 className="csat-card-icon" size={44} />
+              <span className="csat-card-title">First-Time Resolution</span>
+              <div className="csat-card-value">{globalMetrics?.firstTimeResolutionRate}%</div>
+              <span className="csat-card-sub">Resolved tickets never reopened</span>
+            </div>
+          </>
+        )}
+
+        {visibleWidgets.responseRate && (
+          <div className="csat-card" style={{ position: 'relative' }}>
+            {showCustomizer && (
+              <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                <button onClick={() => handleEditTitle('responseRate')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                <button onClick={() => handleToggleWidget('responseRate')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+              </div>
+            )}
+            <Smile className="csat-card-icon" size={44} fill="none" />
+            <span className="csat-card-title">{widgetTitles.responseRate}</span>
+            <div className="csat-card-value">{globalMetrics?.recommendationRate}%</div>
+            <span className="csat-card-sub">Citizen willingness to recommend</span>
           </div>
-          <span className="csat-card-sub">Positive ratings minus negative ratings</span>
-        </div>
-
-        <div className="csat-card">
-          <TrendingUp className="csat-card-icon" size={44} />
-          <span className="csat-card-title">Reopen Rate</span>
-          <div className="csat-card-value" style={{ color: globalMetrics?.reopenRate > 15 ? '#f59e0b' : 'inherit' }}>
-            {globalMetrics?.reopenRate}%
-          </div>
-          <span className="csat-card-sub">Resolved tickets citizen reopened</span>
-        </div>
-
-        <div className="csat-card">
-          <BarChart3 className="csat-card-icon" size={44} />
-          <span className="csat-card-title">First-Time Resolution</span>
-          <div className="csat-card-value">{globalMetrics?.firstTimeResolutionRate}%</div>
-          <span className="csat-card-sub">Resolved tickets never reopened</span>
-        </div>
-
-        <div className="csat-card">
-          <Smile className="csat-card-icon" size={44} fill="none" />
-          <span className="csat-card-title">Recommend Service</span>
-          <div className="csat-card-value">{globalMetrics?.recommendationRate}%</div>
-          <span className="csat-card-sub">Citizen willingness to recommend</span>
-        </div>
+        )}
       </div>
 
       {/* Breakdown Rows */}
-      <div className="csat-dashboard-row">
-        {/* Monthly Satisfaction Trends Chart */}
-        <div className="csat-panel">
-          <div className="csat-panel-header">
-            <h2><TrendingUp size={18} className="text-accent" /> Monthly CSAT Rating Trends</h2>
-            <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Past 6 Months</span>
-          </div>
-          <div className="trends-chart">
-            {monthlyTrends?.map((trend, idx) => {
-              const heightPercent = trend.avgRating ? (trend.avgRating / 5) * 100 : 0;
-              return (
-                <div key={idx} className="trend-bar-wrapper">
-                  <div 
-                    className="trend-bar" 
-                    style={{ height: `${heightPercent}%` }}
-                  >
-                    <div className="trend-tooltip">
-                      Rating: {trend.avgRating} ({trend.feedbackCount} feedback)
+      {(visibleWidgets.trendsChart || visibleWidgets.dimensionAverages) && (
+        <div className="csat-dashboard-row">
+          {/* Monthly Satisfaction Trends Chart */}
+          {visibleWidgets.trendsChart && (
+            <div className="csat-panel" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                  <button onClick={() => handleEditTitle('trendsChart')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                  <button onClick={() => handleToggleWidget('trendsChart')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                </div>
+              )}
+              <div className="csat-panel-header">
+                <h2><TrendingUp size={18} className="text-accent" /> {widgetTitles.trendsChart}</h2>
+                <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Past 6 Months</span>
+              </div>
+              <div className="trends-chart">
+                {monthlyTrends?.map((trend, idx) => {
+                  const heightPercent = trend.avgRating ? (trend.avgRating / 5) * 100 : 0;
+                  return (
+                    <div key={idx} className="trend-bar-wrapper">
+                      <div 
+                        className="trend-bar" 
+                        style={{ height: `${heightPercent}%` }}
+                      >
+                        <div className="trend-tooltip">
+                          Rating: {trend.avgRating} ({trend.feedbackCount} feedback)
+                        </div>
+                      </div>
+                      <span className="trend-label">{trend.month}</span>
                     </div>
-                  </div>
-                  <span className="trend-label">{trend.month}</span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Rating Breakdown Sub-components */}
+          {visibleWidgets.dimensionAverages && (
+            <div className="csat-panel" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                  <button onClick={() => handleEditTitle('dimensionAverages')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                  <button onClick={() => handleToggleWidget('dimensionAverages')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
                 </div>
-              );
-            })}
-          </div>
+              )}
+              <div className="csat-panel-header">
+                <h2><Star size={18} className="text-accent" /> {widgetTitles.dimensionAverages}</h2>
+                <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Dimension-Specific Scores</span>
+              </div>
+              <div className="rankings-list">
+                {globalMetrics?.ratingAverages && globalMetrics.ratingAverages.length > 0 ? (
+                  globalMetrics.ratingAverages.map((dim, idx) => (
+                    <div key={dim.id || idx} className="rankings-item">
+                      <div className="rankings-info">
+                        <span className="rankings-name">{dim.label}</span>
+                      </div>
+                      <div className="rankings-score">
+                        <div className="rankings-score-val">{dim.average} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
+                        {renderStars(dim.average)}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="rankings-item">
+                      <div className="rankings-info">
+                        <span className="rankings-name">Overall Rating</span>
+                      </div>
+                      <div className="rankings-score">
+                        <div className="rankings-score-val">{globalMetrics?.avgOverallRating} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
+                        {renderStars(globalMetrics?.avgOverallRating)}
+                      </div>
+                    </div>
+                    
+                    <div className="rankings-item">
+                      <div className="rankings-info">
+                        <span className="rankings-name">Response Time Satisfaction</span>
+                      </div>
+                      <div className="rankings-score">
+                        <div className="rankings-score-val">{globalMetrics?.avgResponseTimeRating} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
+                        {renderStars(globalMetrics?.avgResponseTimeRating)}
+                      </div>
+                    </div>
+
+                    <div className="rankings-item">
+                      <div className="rankings-info">
+                        <span className="rankings-name">Staff Communication</span>
+                      </div>
+                      <div className="rankings-score">
+                        <div className="rankings-score-val">{globalMetrics?.avgCommunicationRating} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
+                        {renderStars(globalMetrics?.avgCommunicationRating)}
+                      </div>
+                    </div>
+
+                    <div className="rankings-item">
+                      <div className="rankings-info">
+                        <span className="rankings-name">Resolution Quality</span>
+                      </div>
+                      <div className="rankings-score">
+                        <div className="rankings-score-val">{globalMetrics?.avgResolutionQualityRating} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
+                        {renderStars(globalMetrics?.avgResolutionQualityRating)}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Rating Breakdown Sub-components */}
-        <div className="csat-panel">
-          <div className="csat-panel-header">
-            <h2><Star size={18} className="text-accent" /> CSAT Dimension Averages</h2>
-            <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Dimension-Specific Scores</span>
-          </div>
-          <div className="rankings-list">
-            {globalMetrics?.ratingAverages && globalMetrics.ratingAverages.length > 0 ? (
-              globalMetrics.ratingAverages.map((dim, idx) => (
-                <div key={dim.id || idx} className="rankings-item">
-                  <div className="rankings-info">
-                    <span className="rankings-name">{dim.label}</span>
-                  </div>
-                  <div className="rankings-score">
-                    <div className="rankings-score-val">{dim.average} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
-                    {renderStars(dim.average)}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <>
-                <div className="rankings-item">
-                  <div className="rankings-info">
-                    <span className="rankings-name">Overall Rating</span>
-                  </div>
-                  <div className="rankings-score">
-                    <div className="rankings-score-val">{globalMetrics?.avgOverallRating} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
-                    {renderStars(globalMetrics?.avgOverallRating)}
-                  </div>
-                </div>
-                
-                <div className="rankings-item">
-                  <div className="rankings-info">
-                    <span className="rankings-name">Response Time Satisfaction</span>
-                  </div>
-                  <div className="rankings-score">
-                    <div className="rankings-score-val">{globalMetrics?.avgResponseTimeRating} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
-                    {renderStars(globalMetrics?.avgResponseTimeRating)}
-                  </div>
-                </div>
-
-                <div className="rankings-item">
-                  <div className="rankings-info">
-                    <span className="rankings-name">Staff Communication</span>
-                  </div>
-                  <div className="rankings-score">
-                    <div className="rankings-score-val">{globalMetrics?.avgCommunicationRating} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
-                    {renderStars(globalMetrics?.avgCommunicationRating)}
-                  </div>
-                </div>
-
-                <div className="rankings-item">
-                  <div className="rankings-info">
-                    <span className="rankings-name">Resolution Quality</span>
-                  </div>
-                  <div className="rankings-score">
-                    <div className="rankings-score-val">{globalMetrics?.avgResolutionQualityRating} <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>/ 5</span></div>
-                    {renderStars(globalMetrics?.avgResolutionQualityRating)}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Departments CSAT Rankings */}
-      <div className="csat-dashboard-row">
-        <div className="csat-panel">
-          <div className="csat-panel-header">
-            <h2><BarChart3 size={18} className="text-accent" /> Department Satisfaction Rankings</h2>
-            <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Highest to Lowest</span>
-          </div>
-          <div className="rankings-list">
-            {departmentsData.map((dept, index) => (
-              <div key={index} className="rankings-item">
-                <div className="rankings-info">
-                  <div className={`rankings-badge ${index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'rank-other'}`}>
-                    {index + 1}
-                  </div>
-                  <div>
-                    <span className="rankings-name">{dept.departmentName}</span>
-                    <div className="rankings-meta">
-                      Feedback Count: {dept.feedbackCount} • Reopen Rate: {dept.reopenRate}%
+      {(visibleWidgets.deptRankings || visibleWidgets.catRankings) && (
+        <div className="csat-dashboard-row">
+          {visibleWidgets.deptRankings && (
+            <div className="csat-panel" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                  <button onClick={() => handleEditTitle('deptRankings')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                  <button onClick={() => handleToggleWidget('deptRankings')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                </div>
+              )}
+              <div className="csat-panel-header">
+                <h2><BarChart3 size={18} className="text-accent" /> {widgetTitles.deptRankings}</h2>
+                <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Highest to Lowest</span>
+              </div>
+              <div className="rankings-list">
+                {departmentsData.map((dept, index) => (
+                  <div key={index} className="rankings-item">
+                    <div className="rankings-info">
+                      <div className={`rankings-badge ${index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'rank-other'}`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <span className="rankings-name">{dept.departmentName}</span>
+                        <div className="rankings-meta">
+                          Feedback Count: {dept.feedbackCount} • Reopen Rate: {dept.reopenRate}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rankings-score">
+                      <div className="rankings-score-val">{dept.avgRating} <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>CSAT</span></div>
+                      {renderStars(dept.avgRating)}
                     </div>
                   </div>
-                </div>
-                <div className="rankings-score">
-                  <div className="rankings-score-val">{dept.avgRating} <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>CSAT</span></div>
-                  {renderStars(dept.avgRating)}
-                </div>
+                ))}
+                {departmentsData.length === 0 && (
+                  <div className="cd-chat-empty">No department CSAT ratings available.</div>
+                )}
               </div>
-            ))}
-            {departmentsData.length === 0 && (
-              <div className="cd-chat-empty">No department CSAT ratings available.</div>
-            )}
-          </div>
-        </div>
-
-        {/* Categories Analysis */}
-        <div className="csat-panel">
-          <div className="csat-panel-header">
-            <h2><Smile size={18} className="text-accent" /> Category Satisfaction Rankings</h2>
-            <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Category-level Breakdown</span>
-          </div>
-
-          <div className="rankings-list" style={{ marginBottom: '20px' }}>
-            <div className="category-name-heading" style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ThumbsUp size={15} /> Most Loved Categories (Highest CSAT)
             </div>
-            {categoriesData?.mostLovedCategories?.map((cat, idx) => (
-              <div key={idx} className="rankings-item" style={{ padding: '8px 12px' }}>
-                <span className="rankings-name" style={{ fontSize: '13px' }}>{cat.categoryName}</span>
-                <span className="category-rating-val">{cat.csatScore}%</span>
-              </div>
-            ))}
-            {(!categoriesData?.mostLovedCategories || categoriesData.mostLovedCategories.length === 0) && (
-              <div className="cd-chat-empty" style={{ padding: '8px' }}>No category CSAT data.</div>
-            )}
-          </div>
+          )}
 
-          <div className="rankings-list">
-            <div className="category-name-heading" style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ThumbsDown size={15} /> Lowest Rated Categories (Attention Needed)
-            </div>
-            {categoriesData?.lowestRatedCategories?.map((cat, idx) => (
-              <div key={idx} className="rankings-item" style={{ padding: '8px 12px' }}>
-                <span className="rankings-name" style={{ fontSize: '13px' }}>{cat.categoryName}</span>
-                <span className="category-rating-val" style={{ color: '#ef4444' }}>{cat.csatScore}%</span>
+          {/* Categories Analysis */}
+          {visibleWidgets.catRankings && (
+            <div className="csat-panel" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                  <button onClick={() => handleEditTitle('catRankings')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                  <button onClick={() => handleToggleWidget('catRankings')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                </div>
+              )}
+              <div className="csat-panel-header">
+                <h2><Smile size={18} className="text-accent" /> {widgetTitles.catRankings}</h2>
+                <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Category-level Breakdown</span>
               </div>
-            ))}
-            {(!categoriesData?.lowestRatedCategories || categoriesData.lowestRatedCategories.length === 0) && (
-              <div className="cd-chat-empty" style={{ padding: '8px' }}>No category CSAT data.</div>
-            )}
-          </div>
+
+              <div className="rankings-list" style={{ marginBottom: '20px' }}>
+                <div className="category-name-heading" style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ThumbsUp size={15} /> Most Loved Categories (Highest CSAT)
+                </div>
+                {categoriesData?.mostLovedCategories?.map((cat, idx) => (
+                  <div key={idx} className="rankings-item" style={{ padding: '8px 12px' }}>
+                    <span className="rankings-name" style={{ fontSize: '13px' }}>{cat.categoryName}</span>
+                    <span className="category-rating-val">{cat.csatScore}%</span>
+                  </div>
+                ))}
+                {(!categoriesData?.mostLovedCategories || categoriesData.mostLovedCategories.length === 0) && (
+                  <div className="cd-chat-empty" style={{ padding: '8px' }}>No category CSAT data.</div>
+                )}
+              </div>
+
+              <div className="rankings-list">
+                <div className="category-name-heading" style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ThumbsDown size={15} /> Lowest Rated Categories (Attention Needed)
+                </div>
+                {categoriesData?.lowestRatedCategories?.map((cat, idx) => (
+                  <div key={idx} className="rankings-item" style={{ padding: '8px 12px' }}>
+                    <span className="rankings-name" style={{ fontSize: '13px' }}>{cat.categoryName}</span>
+                    <span className="category-rating-val" style={{ color: '#ef4444' }}>{cat.csatScore}%</span>
+                  </div>
+                ))}
+                {(!categoriesData?.lowestRatedCategories || categoriesData.lowestRatedCategories.length === 0) && (
+                  <div className="cd-chat-empty" style={{ padding: '8px' }}>No category CSAT data.</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Alerts and Feedbacks */}
-      <div className="csat-dashboard-row">
-        {/* Negative CSAT Alerts */}
-        <div className="csat-panel">
-          <div className="csat-panel-header">
-            <h2 style={{ color: '#ef4444' }}><AlertTriangle size={18} /> Negative Feedback Alerts (1-2 Stars)</h2>
-            <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Attention Requested</span>
-          </div>
-          <div className="alert-list">
-            {negativeFeedbackAlerts?.map((alert, idx) => (
-              <div 
-                key={idx} 
-                className="alert-item"
-                onClick={() => navigate(`/complaints/${alert.complaintId}`)}
-              >
-                <div className="alert-header">
-                  <span className="alert-ticket-id">{alert.trackingId}</span>
-                  <span className="alert-date">{new Date(alert.submittedAt).toLocaleDateString()}</span>
+      {(visibleWidgets.negativeAlerts || visibleWidgets.recentFeedback) && (
+        <div className="csat-dashboard-row">
+          {/* Negative CSAT Alerts */}
+          {visibleWidgets.negativeAlerts && (
+            <div className="csat-panel" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                  <button onClick={() => handleEditTitle('negativeAlerts')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                  <button onClick={() => handleToggleWidget('negativeAlerts')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
                 </div>
-                <div style={{ fontWeight: 600, fontSize: '13px' }}>{alert.title}</div>
-                <div className="alert-comment">"{alert.comment || 'No comment provided'}"</div>
-                {renderStars(alert.overallRating)}
-                <div className="alert-meta">
-                  <span>Filed by: {alert.citizenName}</span>
-                  <span>Dept: {alert.assignedTo}</span>
-                </div>
+              )}
+              <div className="csat-panel-header">
+                <h2 style={{ color: '#ef4444' }}><AlertTriangle size={18} /> {widgetTitles.negativeAlerts}</h2>
+                <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Attention Requested</span>
               </div>
-            ))}
-            {negativeFeedbackAlerts?.length === 0 && (
-              <div className="cd-chat-empty">No low satisfaction ratings recorded!</div>
-            )}
-          </div>
-        </div>
+              <div className="alert-list">
+                {negativeFeedbackAlerts?.map((alert, idx) => (
+                  <div 
+                    key={idx} 
+                    className="alert-item"
+                    onClick={() => navigate(`/complaints/${alert.complaintId}`)}
+                  >
+                    <div className="alert-header">
+                      <span className="alert-ticket-id">{alert.trackingId}</span>
+                      <span className="alert-date">{new Date(alert.submittedAt).toLocaleDateString()}</span>
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: '13px' }}>{alert.title}</div>
+                    <div className="alert-comment">"{alert.comment || 'No comment provided'}"</div>
+                    {renderStars(alert.overallRating)}
+                    <div className="alert-meta">
+                      <span>Filed by: {alert.citizenName}</span>
+                      <span>Dept: {alert.assignedTo}</span>
+                    </div>
+                  </div>
+                ))}
+                {negativeFeedbackAlerts?.length === 0 && (
+                  <div className="cd-chat-empty">No low satisfaction ratings recorded!</div>
+                )}
+              </div>
+            </div>
+          )}
 
-        {/* Recent Feedback Feed */}
-        <div className="csat-panel">
-          <div className="csat-panel-header">
-            <h2><MessageSquare size={18} className="text-accent" /> Recent Citizen Comments</h2>
-            <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Feedback Feed</span>
-          </div>
-          <div className="alert-list">
-            {recentFeedback?.map((feed, idx) => (
-              <div 
-                key={idx} 
-                className="alert-item" 
-                style={{ borderLeftColor: feed.overallRating >= 4 ? '#10b981' : feed.overallRating === 3 ? '#f59e0b' : '#ef4444', background: 'rgba(255, 255, 255, 0.01)', borderStyle: 'solid', borderWidth: '1px 1px 1px 4px', borderColor: 'var(--border-color) var(--border-color) var(--border-color) ' }}
-                onClick={() => navigate(`/complaints/${feed.complaintId}`)}
-              >
-                <div className="alert-header">
-                  <span className="alert-ticket-id" style={{ color: 'var(--text-color)' }}>{feed.trackingId}</span>
-                  <span className="alert-date">{new Date(feed.submittedAt).toLocaleDateString()}</span>
+          {/* Recent Feedback Feed */}
+          {visibleWidgets.recentFeedback && (
+            <div className="csat-panel" style={{ position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                  <button onClick={() => handleEditTitle('recentFeedback')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                  <button onClick={() => handleToggleWidget('recentFeedback')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
                 </div>
-                <div style={{ fontWeight: 600, fontSize: '13px' }}>{feed.title}</div>
-                <div className="alert-comment" style={{ color: 'var(--text-color)' }}>"{feed.comment || 'No comment provided'}"</div>
-                {renderStars(feed.overallRating)}
-                <div className="alert-meta">
-                  <span>Submitted by: {feed.citizenName}</span>
-                </div>
+              )}
+              <div className="csat-panel-header">
+                <h2><MessageSquare size={18} className="text-accent" /> {widgetTitles.recentFeedback}</h2>
+                <span className="cd-manual-escalate-desc" style={{ margin: 0 }}>Feedback Feed</span>
               </div>
-            ))}
-            {recentFeedback?.length === 0 && (
-              <div className="cd-chat-empty">No comments submitted yet.</div>
-            )}
-          </div>
+              <div className="alert-list">
+                {recentFeedback?.map((feed, idx) => (
+                  <div 
+                    key={idx} 
+                    className="alert-item" 
+                    style={{ borderLeftColor: feed.overallRating >= 4 ? '#10b981' : feed.overallRating === 3 ? '#f59e0b' : '#ef4444', background: 'rgba(255, 255, 255, 0.01)', borderStyle: 'solid', borderWidth: '1px 1px 1px 4px', borderColor: 'var(--border-color) var(--border-color) var(--border-color) ' }}
+                    onClick={() => navigate(`/complaints/${feed.complaintId}`)}
+                  >
+                    <div className="alert-header">
+                      <span className="alert-ticket-id" style={{ color: 'var(--text-color)' }}>{feed.trackingId}</span>
+                      <span className="alert-date">{new Date(feed.submittedAt).toLocaleDateString()}</span>
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: '13px' }}>{feed.title}</div>
+                    <div className="alert-comment" style={{ color: 'var(--text-color)' }}>"{feed.comment || 'No comment provided'}"</div>
+                    {renderStars(feed.overallRating)}
+                    <div className="alert-meta">
+                      <span>Submitted by: {feed.citizenName}</span>
+                    </div>
+                  </div>
+                ))}
+                {recentFeedback?.length === 0 && (
+                  <div className="cd-chat-empty">No comments submitted yet.</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* High-Fidelity Reports Modal Overlay */}
       {isReportOpen && (

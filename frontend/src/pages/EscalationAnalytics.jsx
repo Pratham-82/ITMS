@@ -32,6 +32,79 @@ const EscalationAnalytics = ({ complaints: propComplaints }) => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Customizer visible elements state
+  const [visibleWidgets, setVisibleWidgets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('apexresolve_custom_sla_visible');
+      return saved ? JSON.parse(saved) : {
+        totalEscalated: true,
+        autoBreaches: true,
+        manualOverrides: true,
+        complianceRate: true,
+        deptChart: true,
+        catChart: true,
+        recentTable: true
+      };
+    } catch {
+      return {
+        totalEscalated: true,
+        autoBreaches: true,
+        manualOverrides: true,
+        complianceRate: true,
+        deptChart: true,
+        catChart: true,
+        recentTable: true
+      };
+    }
+  });
+
+  // Customizer widget titles state
+  const [widgetTitles, setWidgetTitles] = useState(() => {
+    try {
+      const saved = localStorage.getItem('apexresolve_custom_sla_titles');
+      return saved ? JSON.parse(saved) : {
+        totalEscalated: 'Total Escalated',
+        autoBreaches: 'Automated SLA Breaches',
+        manualOverrides: 'Manual Overrides',
+        complianceRate: 'SLA Compliance Rate',
+        deptChart: 'Escalations Received by Department',
+        catChart: 'Escalation Share by Category',
+        recentTable: 'Recent Escalated Complaints'
+      };
+    } catch {
+      return {
+        totalEscalated: 'Total Escalated',
+        autoBreaches: 'Automated SLA Breaches',
+        manualOverrides: 'Manual Overrides',
+        complianceRate: 'SLA Compliance Rate',
+        deptChart: 'Escalations Received by Department',
+        catChart: 'Escalation Share by Category',
+        recentTable: 'Recent Escalated Complaints'
+      };
+    }
+  });
+
+  const saveCustomization = (newVisible, newTitles) => {
+    localStorage.setItem('apexresolve_custom_sla_visible', JSON.stringify(newVisible));
+    localStorage.setItem('apexresolve_custom_sla_titles', JSON.stringify(newTitles));
+    localStorage.setItem('apexresolve_custom_sla', 'true');
+  };
+
+  const handleToggleWidget = (key) => {
+    const updated = { ...visibleWidgets, [key]: !visibleWidgets[key] };
+    setVisibleWidgets(updated);
+    saveCustomization(updated, widgetTitles);
+  };
+
+  const handleEditTitle = (key) => {
+    const newTitle = window.prompt(`Enter new title for "${widgetTitles[key]}":`, widgetTitles[key]);
+    if (newTitle !== null && newTitle.trim() !== '') {
+      const updated = { ...widgetTitles, [key]: newTitle.trim() };
+      setWidgetTitles(updated);
+      saveCustomization(visibleWidgets, updated);
+    }
+  };
+
   const fetchComplaints = async () => {
     try {
       setLoading(true);
@@ -232,52 +305,103 @@ const EscalationAnalytics = ({ complaints: propComplaints }) => {
         </div>
       ) : (
         <>
+          {showCustomizer && (
+            <div className="dashboard-panel db-customizer-panel" style={{ padding: '16px 20px', marginBottom: '24px', animation: 'fadeIn 0.3s ease-out' }}>
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800 }}>Customizer Mode: Toggle SLA Widgets</h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                {Object.keys(visibleWidgets).map(key => (
+                  <label key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={visibleWidgets[key]} 
+                      onChange={() => handleToggleWidget(key)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span>{widgetTitles[key]}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Key Metric Cards */}
           <div className="stats-grid">
             
             {/* Total Escalated */}
-            <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(239, 68, 68, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#f87171' }}>
-                <ShieldAlert size={24} />
+            {visibleWidgets.totalEscalated && (
+              <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', position: 'relative' }}>
+                {showCustomizer && (
+                  <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                    <button onClick={() => handleEditTitle('totalEscalated')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                    <button onClick={() => handleToggleWidget('totalEscalated')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                  </div>
+                )}
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(239, 68, 68, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#f87171' }}>
+                  <ShieldAlert size={24} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>{widgetTitles.totalEscalated}</span>
+                  <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0 0 0' }}>{totalEscalated}</h3>
+                </div>
               </div>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Escalated</span>
-                <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0 0 0' }}>{totalEscalated}</h3>
-              </div>
-            </div>
+            )}
 
             {/* Auto Escalated */}
-            <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(245, 158, 11, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fbbf24' }}>
-                <Clock size={24} />
+            {visibleWidgets.autoBreaches && (
+              <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', position: 'relative' }}>
+                {showCustomizer && (
+                  <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                    <button onClick={() => handleEditTitle('autoBreaches')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                    <button onClick={() => handleToggleWidget('autoBreaches')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                  </div>
+                )}
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(245, 158, 11, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fbbf24' }}>
+                  <Clock size={24} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>{widgetTitles.autoBreaches}</span>
+                  <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0 0 0' }}>{autoEscalated}</h3>
+                </div>
               </div>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Automated SLA Breaches</span>
-                <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0 0 0' }}>{autoEscalated}</h3>
-              </div>
-            </div>
+            )}
 
             {/* Manually Escalated */}
-            <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(99, 102, 241, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#818cf8' }}>
-                <AlertTriangle size={24} />
+            {visibleWidgets.manualOverrides && (
+              <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', position: 'relative' }}>
+                {showCustomizer && (
+                  <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                    <button onClick={() => handleEditTitle('manualOverrides')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                    <button onClick={() => handleToggleWidget('manualOverrides')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                  </div>
+                )}
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(99, 102, 241, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#818cf8' }}>
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>{widgetTitles.manualOverrides}</span>
+                  <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0 0 0' }}>{manualEscalated}</h3>
+                </div>
               </div>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Manual Overrides</span>
-                <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0 0 0' }}>{manualEscalated}</h3>
-              </div>
-            </div>
+            )}
 
             {/* SLA Compliance */}
-            <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(16, 185, 129, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#34d399' }}>
-                <CheckCircle size={24} />
+            {visibleWidgets.complianceRate && (
+              <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', position: 'relative' }}>
+                {showCustomizer && (
+                  <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                    <button onClick={() => handleEditTitle('complianceRate')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                    <button onClick={() => handleToggleWidget('complianceRate')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                  </div>
+                )}
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(16, 185, 129, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#34d399' }}>
+                  <CheckCircle size={24} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>{widgetTitles.complianceRate}</span>
+                  <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0 0 0' }}>{slaCompliance}%</h3>
+                </div>
               </div>
-              <div>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>SLA Compliance Rate</span>
-                <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0 0 0' }}>{slaCompliance}%</h3>
-              </div>
-            </div>
+            )}
 
           </div>
 
@@ -285,108 +409,132 @@ const EscalationAnalytics = ({ complaints: propComplaints }) => {
           <div className="dashboard-grid" style={{ marginBottom: '32px' }}>
             
             {/* Department Bar Chart */}
-            <div className="card" style={{ padding: '24px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '14px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BarChart3 size={18} className="text-accent" />
-                Escalations Received by Department
-              </h3>
-              <div style={{ height: '300px', position: 'relative' }}>
-                {deptLabels.length === 0 ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-secondary)' }}>
-                    No escalation data recorded yet.
+            {visibleWidgets.deptChart && (
+              <div className="card" style={{ padding: '24px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '14px', position: 'relative' }}>
+                {showCustomizer && (
+                  <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                    <button onClick={() => handleEditTitle('deptChart')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                    <button onClick={() => handleToggleWidget('deptChart')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
                   </div>
-                ) : (
-                  <Bar data={departmentChartData} options={departmentChartOptions} />
                 )}
+                <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <BarChart3 size={18} className="text-accent" />
+                  {widgetTitles.deptChart}
+                </h3>
+                <div style={{ height: '300px', position: 'relative' }}>
+                  {deptLabels.length === 0 ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-secondary)' }}>
+                      No escalation data recorded yet.
+                    </div>
+                  ) : (
+                    <Bar data={departmentChartData} options={departmentChartOptions} />
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Category Doughnut Chart */}
-            <div className="card" style={{ padding: '24px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '14px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <PieChart size={18} className="text-accent" />
-                Escalation Share by Category
-              </h3>
-              <div style={{ height: '300px', position: 'relative' }}>
-                {catLabels.length === 0 ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-secondary)' }}>
-                    No category escalation records.
+            {visibleWidgets.catChart && (
+              <div className="card" style={{ padding: '24px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '14px', position: 'relative' }}>
+                {showCustomizer && (
+                  <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                    <button onClick={() => handleEditTitle('catChart')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                    <button onClick={() => handleToggleWidget('catChart')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
                   </div>
-                ) : (
-                  <Doughnut data={categoryChartData} options={categoryChartOptions} />
                 )}
+                <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <PieChart size={18} className="text-accent" />
+                  {widgetTitles.catChart}
+                </h3>
+                <div style={{ height: '300px', position: 'relative' }}>
+                  {catLabels.length === 0 ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-secondary)' }}>
+                      No category escalation records.
+                    </div>
+                  ) : (
+                    <Doughnut data={categoryChartData} options={categoryChartOptions} />
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
 
           {/* Recent Escalations Table Grid */}
-          <div className="card" style={{ padding: '24px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '14px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>Recent Escalated Complaints</h3>
-            
-            {escalatedTickets.length === 0 ? (
-              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0', margin: 0 }}>
-                No active complaints are currently escalated.
-              </p>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>ID</th>
-                      <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Title</th>
-                      <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Category</th>
-                      <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Assigned Dept</th>
-                      <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Level</th>
-                      <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Trigger</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {escalatedTickets.slice(0, 10).map((ticket) => (
-                      <tr key={ticket._id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }}>
-                        <td style={{ padding: '14px 8px', fontSize: '13px', fontWeight: 800, color: 'var(--accent-color)' }}>
-                          {ticket.trackingId}
-                        </td>
-                        <td style={{ padding: '14px 8px', fontSize: '13px', fontWeight: 600 }}>
-                          {ticket.title}
-                        </td>
-                        <td style={{ padding: '14px 8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                          {ticket.categoryName}
-                        </td>
-                        <td style={{ padding: '14px 8px', fontSize: '13px', fontWeight: 700 }}>
-                          {ticket.department?.name || (ticket.assignedTo && typeof ticket.assignedTo === 'object' ? ticket.assignedTo.department : ticket.assignedTo) || 'Unassigned'}
-                        </td>
-                        <td style={{ padding: '14px 8px' }}>
-                          <span style={{ 
-                            padding: '3px 8px', 
-                            borderRadius: '6px', 
-                            fontSize: '11px', 
-                            fontWeight: 800, 
-                            backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                            color: 'var(--accent-color)' 
-                          }}>
-                            Lvl {ticket.currentEscalationLevel || 1}
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 8px' }}>
-                          <span style={{ 
-                            padding: '3px 8px', 
-                            borderRadius: '6px', 
-                            fontSize: '11px', 
-                            fontWeight: 700, 
-                            backgroundColor: ticket.isAutoEscalated ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                            color: ticket.isAutoEscalated ? '#fbbf24' : '#34d399' 
-                          }}>
-                            {ticket.isAutoEscalated ? 'Auto (SLA)' : 'Manual'}
-                          </span>
-                        </td>
+          {visibleWidgets.recentTable && (
+            <div className="card" style={{ padding: '24px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '14px', position: 'relative' }}>
+              {showCustomizer && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                  <button onClick={() => handleEditTitle('recentTable')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                  <button onClick={() => handleToggleWidget('recentTable')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                </div>
+              )}
+              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>{widgetTitles.recentTable}</h3>
+              
+              {escalatedTickets.length === 0 ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0', margin: 0 }}>
+                  No active complaints are currently escalated.
+                </p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>ID</th>
+                        <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Title</th>
+                        <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Category</th>
+                        <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Assigned Dept</th>
+                        <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Level</th>
+                        <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Trigger</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                    </thead>
+                    <tbody>
+                      {escalatedTickets.slice(0, 10).map((ticket) => (
+                        <tr key={ticket._id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }}>
+                          <td style={{ padding: '14px 8px', fontSize: '13px', fontWeight: 800, color: 'var(--accent-color)' }}>
+                            {ticket.trackingId}
+                          </td>
+                          <td style={{ padding: '14px 8px', fontSize: '13px', fontWeight: 600 }}>
+                            {ticket.title}
+                          </td>
+                          <td style={{ padding: '14px 8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                            {ticket.categoryName}
+                          </td>
+                          <td style={{ padding: '14px 8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                            {ticket.assignedDepartment}
+                          </td>
+                          <td style={{ padding: '14px 8px', fontSize: '13px' }}>
+                            <span style={{ 
+                              padding: '2px 8px', 
+                              borderRadius: '12px', 
+                              fontSize: '11px', 
+                              fontWeight: 700, 
+                              backgroundColor: ticket.currentEscalationLevel > 0 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                              color: ticket.currentEscalationLevel > 0 ? '#ef4444' : '#fbbf24'
+                            }}>
+                              L{ticket.currentEscalationLevel || 0}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 8px', fontSize: '13px' }}>
+                            <span style={{ 
+                              padding: '2px 8px', 
+                              borderRadius: '12px', 
+                              fontSize: '11px', 
+                              fontWeight: 700, 
+                              backgroundColor: ticket.isAutoEscalated ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                              color: ticket.isAutoEscalated ? '#fbbf24' : '#34d399' 
+                            }}>
+                              {ticket.isAutoEscalated ? 'Auto (SLA)' : 'Manual'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 

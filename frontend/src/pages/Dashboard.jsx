@@ -2270,49 +2270,60 @@ const AdminDashboard = ({
       {/* Global Dashboard Control Toolbar */}
       <div className="db-customizer-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '10px' }}>
-          {currentTab === 'overview' ? (
+          <button 
+            onClick={() => setShowCustomizer(!showCustomizer)} 
+            className={`btn db-customizer-btn ${showCustomizer ? 'btn-primary' : 'btn-secondary'}`}
+            style={showCustomizer ? { background: 'var(--accent-color)', color: 'white' } : {}}
+          >
+            <Layout size={15} />
+            <span>{showCustomizer ? 'Exit Customizer' : 'Customize Dashboard'}</span>
+          </button>
+
+          {showCustomizer && currentTab === 'overview' && (
             <>
               <button 
-                onClick={() => setShowCustomizer(!showCustomizer)} 
-                className="btn btn-secondary db-customizer-btn"
+                onClick={() => { setEditingWidget(null); setShowWidgetModal(true); }} 
+                className="btn btn-primary db-customizer-btn"
+                style={{ background: 'var(--accent-color)', color: 'white' }}
               >
-                <Layout size={15} />
-                <span>Customize Dashboard</span>
+                <Plus size={15} />
+                <span>Add Custom Widget</span>
               </button>
 
-              {showCustomizer && (
-                <>
-                  <button 
-                    onClick={() => { setEditingWidget(null); setShowWidgetModal(true); }} 
-                    className="btn btn-primary db-customizer-btn"
-                    style={{ background: 'var(--accent-color)', color: 'white' }}
-                  >
-                    <Plus size={15} />
-                    <span>Add Custom Widget</span>
-                  </button>
+              <button 
+                onClick={() => setShowLibraryModal(true)} 
+                className="btn btn-secondary db-customizer-btn"
+                style={{ border: '1px solid var(--accent-color)', color: 'var(--accent-color)', background: 'transparent' }}
+              >
+                <LucideIcons.Bookmark size={15} style={{ marginRight: '6px' }} />
+                <span>Add from Library</span>
+              </button>
 
-                  <button 
-                    onClick={() => setShowLibraryModal(true)} 
-                    className="btn btn-secondary db-customizer-btn"
-                    style={{ border: '1px solid var(--accent-color)', color: 'var(--accent-color)', background: 'transparent' }}
-                  >
-                    <LucideIcons.Bookmark size={15} style={{ marginRight: '6px' }} />
-                    <span>Add from Library</span>
-                  </button>
-
-                  <button 
-                    onClick={handleResetDashboard} 
-                    className="btn btn-secondary db-customizer-btn"
-                    style={{ borderStyle: 'dashed' }}
-                  >
-                    <RefreshCw size={15} />
-                    <span>Reset to Defaults</span>
-                  </button>
-                </>
-              )}
+              <button 
+                onClick={handleResetDashboard} 
+                className="btn btn-secondary db-customizer-btn"
+                style={{ borderStyle: 'dashed' }}
+              >
+                <RefreshCw size={15} />
+                <span>Reset to Defaults</span>
+              </button>
             </>
-          ) : (
-            <div />
+          )}
+
+          {showCustomizer && currentTab !== 'overview' && (
+            <button 
+              onClick={() => {
+                if (window.confirm('Reset this tab layout back to defaults?')) {
+                  localStorage.removeItem(`apexresolve_custom_${currentTab}`);
+                  window.location.reload();
+                }
+              }} 
+              className="btn btn-secondary db-customizer-btn"
+              style={{ borderStyle: 'dashed' }}
+            >
+              <RefreshCw size={15} />
+              <span>Reset Tab Layout</span>
+            </button>
           )}
         </div>
         
@@ -2624,7 +2635,7 @@ const AdminDashboard = ({
 
       {currentTab === 'sla' && (
         <div className="sla-tab-content" style={{ animation: 'fadeIn 0.3s ease-out' }}>
-          <EscalationAnalytics complaints={complaints} />
+          <EscalationAnalytics complaints={complaints} showCustomizer={showCustomizer} />
         </div>
       )}
 
@@ -2633,6 +2644,7 @@ const AdminDashboard = ({
           <CsatAnalytics 
             startDate={start ? start.toISOString() : ''} 
             endDate={end ? end.toISOString() : ''} 
+            showCustomizer={showCustomizer}
           />
         </div>
       )}

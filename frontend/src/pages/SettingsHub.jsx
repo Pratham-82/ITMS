@@ -1397,11 +1397,11 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
           });
         } else {
           totalReviews = 246;
-          verySatisfiedCount = 142;
-          satisfiedCount = 68;
-          neutralCount = 21;
-          dissatisfiedCount = 10;
-          veryDissatisfiedCount = 5;
+          verySatisfiedCount = 191;
+          satisfiedCount = 39;
+          neutralCount = 10;
+          dissatisfiedCount = 4;
+          veryDissatisfiedCount = 2;
         }
 
         const verySatisfiedPct = ((verySatisfiedCount / totalReviews) * 100).toFixed(1);

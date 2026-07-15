@@ -6,7 +6,7 @@ import '../styles/EscalationAnalytics.css';
 import { 
   TrendingUp, Clock, AlertTriangle, CheckCircle, 
   ArrowRight, ShieldAlert, BarChart3, PieChart, RefreshCw,
-  Settings
+  Settings, UserCheck
 } from 'lucide-react';
 
 // ChartJS imports
@@ -38,6 +38,7 @@ const EscalationAnalytics = ({ complaints: propComplaints, showCustomizer }) => 
       totalEscalated: true,
       autoBreaches: true,
       manualOverrides: true,
+      staffOnlyEscalated: true,
       complianceRate: true,
       deptChart: true,
       catChart: true,
@@ -63,6 +64,7 @@ const EscalationAnalytics = ({ complaints: propComplaints, showCustomizer }) => 
       totalEscalated: 'Total Escalated',
       autoBreaches: 'Automated SLA Breaches',
       manualOverrides: 'Manual Overrides',
+      staffOnlyEscalated: 'Staff-Only Escalations',
       complianceRate: 'SLA Compliance Rate',
       deptChart: 'Escalations Received by Department',
       catChart: 'Escalation Share by Category',
@@ -150,6 +152,11 @@ const EscalationAnalytics = ({ complaints: propComplaints, showCustomizer }) => 
     c.resolutionSlaStatus === 'Breached'
   ).length;
   const manualEscalated = totalEscalated - autoEscalated;
+  const staffOnlyEscalatedCount = escalatedTickets.filter(c => 
+    c.ticketType && 
+    c.ticketType.allowedRoles && 
+    !c.ticketType.allowedRoles.includes('citizen')
+  ).length;
   
   // SLA Compliance Rate: Percentage of tickets that did NOT require auto-escalation
   const slaCompliance = totalTickets > 0 
@@ -382,6 +389,25 @@ const EscalationAnalytics = ({ complaints: propComplaints, showCustomizer }) => 
               </div>
             )}
 
+            {/* Staff-Only Escalations */}
+            {visibleWidgets.staffOnlyEscalated && (
+              <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', position: 'relative' }}>
+                {showCustomizer && (
+                  <div style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', gap: '4px' }}>
+                    <button onClick={() => handleEditTitle('staffOnlyEscalated')} title="Edit Title" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>Edit</button>
+                    <button onClick={() => handleToggleWidget('staffOnlyEscalated')} title="Hide Widget" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', borderStyle: 'solid' }}>X</button>
+                  </div>
+                )}
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(6, 182, 212, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#22d3ee' }}>
+                  <UserCheck size={24} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>{widgetTitles.staffOnlyEscalated}</span>
+                  <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '2px 0 0 0' }}>{staffOnlyEscalatedCount}</h3>
+                </div>
+              </div>
+            )}
+
             {/* SLA Compliance */}
             {visibleWidgets.complianceRate && (
               <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', position: 'relative' }}>
@@ -493,7 +519,22 @@ const EscalationAnalytics = ({ complaints: propComplaints, showCustomizer }) => 
                             {ticket.trackingId}
                           </td>
                           <td style={{ padding: '14px 8px', fontSize: '13px', fontWeight: 600 }}>
-                            {ticket.title}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {ticket.title}
+                              {ticket.ticketType && ticket.ticketType.allowedRoles && !ticket.ticketType.allowedRoles.includes('citizen') && (
+                                <span style={{ 
+                                  padding: '2px 6px', 
+                                  borderRadius: '4px', 
+                                  fontSize: '10px', 
+                                  fontWeight: 700, 
+                                  backgroundColor: 'rgba(6, 182, 212, 0.12)', 
+                                  color: '#22d3ee',
+                                  border: '1px solid rgba(6, 182, 212, 0.2)'
+                                }}>
+                                  Staff Only
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td style={{ padding: '14px 8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
                             {ticket.categoryName}

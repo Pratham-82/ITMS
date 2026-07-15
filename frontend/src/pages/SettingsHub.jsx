@@ -1361,14 +1361,14 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
         );
 
       case 'analytics':
-        const ticketsWithRatings = liveData.tickets.filter(t => t.rating);
+        const ticketsWithRatings = liveData.tickets.filter(t => typeof t.rating === 'number' && t.rating > 0);
         const csatScoreVal = ticketsWithRatings.length > 0 
           ? (ticketsWithRatings.reduce((sum, t) => sum + t.rating, 0) / ticketsWithRatings.length).toFixed(1)
           : '4.7';
 
         const duplicateRateVal = liveData.tickets.length > 0
           ? ((liveData.duplicateAudits.length / liveData.tickets.length) * 100).toFixed(1) + '%'
-          : '3.2%';
+          : '0.0%';
 
         const breachesCountVal = liveData.tickets.filter(t => t.responseSlaStatus === 'Breached' || t.resolutionSlaStatus === 'Breached').length || 23;
 
@@ -1378,6 +1378,50 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
           const totalMs = resolvedTickets.reduce((sum, t) => sum + (new Date(t.resolvedAt) - new Date(t.createdAt)), 0);
           avgHoursVal = (totalMs / (resolvedTickets.length * 60 * 60 * 1000)).toFixed(1) + ' hrs';
         }
+
+        // Dynamic CSAT breakdown values
+        let totalReviews = ticketsWithRatings.length;
+        let verySatisfiedCount = 0;
+        let satisfiedCount = 0;
+        let neutralCount = 0;
+        let dissatisfiedCount = 0;
+        let veryDissatisfiedCount = 0;
+
+        if (totalReviews > 0) {
+          ticketsWithRatings.forEach(t => {
+            if (t.rating === 5) verySatisfiedCount++;
+            else if (t.rating === 4) satisfiedCount++;
+            else if (t.rating === 3) neutralCount++;
+            else if (t.rating === 2) dissatisfiedCount++;
+            else if (t.rating === 1) veryDissatisfiedCount++;
+          });
+        } else {
+          totalReviews = 246;
+          verySatisfiedCount = 142;
+          satisfiedCount = 68;
+          neutralCount = 21;
+          dissatisfiedCount = 10;
+          veryDissatisfiedCount = 5;
+        }
+
+        const verySatisfiedPct = ((verySatisfiedCount / totalReviews) * 100).toFixed(1);
+        const satisfiedPct = ((satisfiedCount / totalReviews) * 100).toFixed(1);
+        const neutralPct = ((neutralCount / totalReviews) * 100).toFixed(1);
+        const dissatisfiedPct = ((dissatisfiedCount / totalReviews) * 100).toFixed(1);
+        const veryDissatisfiedPct = ((veryDissatisfiedCount / totalReviews) * 100).toFixed(1);
+
+        const totalCircumference = 251.2;
+        const vsDash = (verySatisfiedCount / totalReviews) * totalCircumference;
+        const sDash = (satisfiedCount / totalReviews) * totalCircumference;
+        const nDash = (neutralCount / totalReviews) * totalCircumference;
+        const dDash = (dissatisfiedCount / totalReviews) * totalCircumference;
+        const vdDash = (veryDissatisfiedCount / totalReviews) * totalCircumference;
+
+        const vsOffset = 0;
+        const sOffset = -vsDash;
+        const nOffset = -(vsDash + sDash);
+        const dOffset = -(vsDash + sDash + nDash);
+        const vdOffset = -(vsDash + sDash + nDash + dDash);
 
         return (
           <div className="fade-in">
@@ -1470,19 +1514,19 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                   <div className="sh-donut-graphic" style={{ marginBottom: '20px' }}>
                     <svg viewBox="0 0 100 100" width="100" height="100%">
                       <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--border-color)" strokeWidth="10" />
-                      {/* Very Satisfied: 57.7% */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#10b981" strokeWidth="10" strokeDasharray="145 251" strokeDashoffset="0" />
-                      {/* Satisfied: 27.4% */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#6366f1" strokeWidth="10" strokeDasharray="68 251" strokeDashoffset="-145" />
-                      {/* Neutral: 8.5% */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f59e0b" strokeWidth="10" strokeDasharray="21 251" strokeDashoffset="-213" />
-                      {/* Dissatisfied: 4% */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#ef4444" strokeWidth="10" strokeDasharray="10 251" strokeDashoffset="-234" />
-                      {/* Very Dissatisfied: 2% */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#ef4444" strokeWidth="10" strokeDasharray="5 251" strokeDashoffset="-244" />
+                      {/* Very Satisfied */}
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#10b981" strokeWidth="10" strokeDasharray={`${vsDash} ${totalCircumference}`} strokeDashoffset={vsOffset} />
+                      {/* Satisfied */}
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#6366f1" strokeWidth="10" strokeDasharray={`${sDash} ${totalCircumference}`} strokeDashoffset={sOffset} />
+                      {/* Neutral */}
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f59e0b" strokeWidth="10" strokeDasharray={`${nDash} ${totalCircumference}`} strokeDashoffset={nOffset} />
+                      {/* Dissatisfied */}
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f97316" strokeWidth="10" strokeDasharray={`${dDash} ${totalCircumference}`} strokeDashoffset={dOffset} />
+                      {/* Very Dissatisfied */}
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#ef4444" strokeWidth="10" strokeDasharray={`${vdDash} ${totalCircumference}`} strokeDashoffset={vdOffset} />
                     </svg>
                     <div className="sh-donut-graphic-text">
-                      <span className="sh-donut-graphic-val" style={{ fontSize: '18px' }}>{ticketsWithRatings.length || 246}</span>
+                      <span className="sh-donut-graphic-val" style={{ fontSize: '18px' }}>{totalReviews}</span>
                       <span className="sh-donut-graphic-lbl" style={{ fontSize: '9px' }}>Reviews</span>
                     </div>
                   </div>
@@ -1492,21 +1536,35 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
                         <div className="sh-donut-color-dot" style={{ backgroundColor: '#10b981' }} />
                         <span className="sh-donut-legend-label" style={{ fontSize: '12px' }}>Very Satisfied</span>
                       </div>
-                      <span className="sh-donut-legend-val" style={{ fontSize: '12px' }}>143 (57.7%)</span>
+                      <span className="sh-donut-legend-val" style={{ fontSize: '12px' }}>{verySatisfiedCount} ({verySatisfiedPct}%)</span>
                     </div>
                     <div className="sh-donut-legend-item">
                       <div className="sh-donut-legend-left">
                         <div className="sh-donut-color-dot" style={{ backgroundColor: '#6366f1' }} />
                         <span className="sh-donut-legend-label" style={{ fontSize: '12px' }}>Satisfied</span>
                       </div>
-                      <span className="sh-donut-legend-val" style={{ fontSize: '12px' }}>68 (27.4%)</span>
+                      <span className="sh-donut-legend-val" style={{ fontSize: '12px' }}>{satisfiedCount} ({satisfiedPct}%)</span>
                     </div>
                     <div className="sh-donut-legend-item">
                       <div className="sh-donut-legend-left">
                         <div className="sh-donut-color-dot" style={{ backgroundColor: '#f59e0b' }} />
                         <span className="sh-donut-legend-label" style={{ fontSize: '12px' }}>Neutral</span>
                       </div>
-                      <span className="sh-donut-legend-val" style={{ fontSize: '12px' }}>21 (8.5%)</span>
+                      <span className="sh-donut-legend-val" style={{ fontSize: '12px' }}>{neutralCount} ({neutralPct}%)</span>
+                    </div>
+                    <div className="sh-donut-legend-item">
+                      <div className="sh-donut-legend-left">
+                        <div className="sh-donut-color-dot" style={{ backgroundColor: '#f97316' }} />
+                        <span className="sh-donut-legend-label" style={{ fontSize: '12px' }}>Dissatisfied</span>
+                      </div>
+                      <span className="sh-donut-legend-val" style={{ fontSize: '12px' }}>{dissatisfiedCount} ({dissatisfiedPct}%)</span>
+                    </div>
+                    <div className="sh-donut-legend-item">
+                      <div className="sh-donut-legend-left">
+                        <div className="sh-donut-color-dot" style={{ backgroundColor: '#ef4444' }} />
+                        <span className="sh-donut-legend-label" style={{ fontSize: '12px' }}>Very Dissatisfied</span>
+                      </div>
+                      <span className="sh-donut-legend-val" style={{ fontSize: '12px' }}>{veryDissatisfiedCount} ({veryDissatisfiedPct}%)</span>
                     </div>
                   </div>
                 </div>

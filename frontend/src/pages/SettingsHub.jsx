@@ -1361,9 +1361,21 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
         );
 
       case 'analytics':
-        const ticketsWithRatings = liveData.tickets.filter(t => typeof t.rating === 'number' && t.rating > 0);
+        const getTicketRating = (t) => {
+          return t.feedback?.overallRating || t.rating || 0;
+        };
+
+        const ticketsWithRatings = liveData.tickets.filter(t => {
+          const r = getTicketRating(t);
+          return typeof r === 'number' && r > 0;
+        });
+
         const csatScoreVal = ticketsWithRatings.length > 0 
-          ? (ticketsWithRatings.reduce((sum, t) => sum + t.rating, 0) / ticketsWithRatings.length).toFixed(1)
+          ? (ticketsWithRatings.reduce((sum, t) => sum + getTicketRating(t), 0) / ticketsWithRatings.length).toFixed(1)
+          : 'N/A';
+
+        const csatScorePercentage = ticketsWithRatings.length > 0
+          ? Math.round((ticketsWithRatings.filter(t => getTicketRating(t) >= 4).length / ticketsWithRatings.length) * 100)
           : 'N/A';
 
         const duplicateRateVal = liveData.tickets.length > 0
@@ -1388,11 +1400,12 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
         let veryDissatisfiedCount = 0;
 
         ticketsWithRatings.forEach(t => {
-          if (t.rating === 5) verySatisfiedCount++;
-          else if (t.rating === 4) satisfiedCount++;
-          else if (t.rating === 3) neutralCount++;
-          else if (t.rating === 2) dissatisfiedCount++;
-          else if (t.rating === 1) veryDissatisfiedCount++;
+          const r = getTicketRating(t);
+          if (r === 5) verySatisfiedCount++;
+          else if (r === 4) satisfiedCount++;
+          else if (r === 3) neutralCount++;
+          else if (r === 2) dissatisfiedCount++;
+          else if (r === 1) veryDissatisfiedCount++;
         });
 
         const verySatisfiedPct = totalReviews > 0 ? ((verySatisfiedCount / totalReviews) * 100).toFixed(1) : '0.0';
@@ -1435,7 +1448,10 @@ const SettingsHub = ({ defaultSection, defaultTab }) => {
               <div className="sh-metric-card-custom">
                 <div className="sh-metric-card-left">
                   <span className="sh-metric-card-label">CSAT Score</span>
-                  <span className="sh-metric-card-val">{csatScoreVal === 'N/A' ? 'N/A' : `${csatScoreVal} / 5.0`}</span>
+                  <span className="sh-metric-card-val">
+                    {csatScoreVal === 'N/A' ? 'N/A' : `${csatScoreVal} / 5.0`}
+                    {csatScorePercentage !== 'N/A' && ` (${csatScorePercentage}%)`}
+                  </span>
                   <span className="sh-metric-card-sublabel" style={{ color: csatScoreVal === 'N/A' ? 'var(--text-muted)' : '#10b981', fontWeight: 700 }}>
                     {csatScoreVal === 'N/A' ? 'No reviews' : parseFloat(csatScoreVal) >= 4.0 ? 'Excellent' : 'Good'}
                   </span>

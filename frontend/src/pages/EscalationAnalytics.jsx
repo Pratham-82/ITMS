@@ -24,7 +24,7 @@ import { Doughnut, Bar } from 'react-chartjs-2';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, ChartTitle);
 
-const EscalationAnalytics = ({ complaints: propComplaints }) => {
+const EscalationAnalytics = ({ complaints: propComplaints, showCustomizer }) => {
   const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();

@@ -22,7 +22,7 @@ import { Doughnut, Bar } from 'react-chartjs-2';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, ChartTitle);
 
-const EscalationAnalytics = () => {
+const EscalationAnalytics = ({ complaints: propComplaints }) => {
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -49,16 +49,32 @@ const EscalationAnalytics = () => {
   };
 
   useEffect(() => {
-    if (user?.token) {
+    if (propComplaints) {
+      setComplaints(propComplaints);
+      setLoading(false);
+    } else if (user?.token) {
       fetchComplaints();
     }
-  }, [user]);
+  }, [propComplaints, user]);
 
   // Aggregate stats in frontend memory
   const totalTickets = complaints.length;
-  const escalatedTickets = complaints.filter(c => (c.currentEscalationLevel || 0) > 0 || c.isEscalated);
+  const escalatedTickets = complaints.filter(c => 
+    (c.currentEscalationLevel || 0) > 0 || 
+    c.isEscalated || 
+    c.status === 'Escalated' || 
+    c.executiveEscalated || 
+    (c.totalBreachCount || 0) > 0 ||
+    c.responseSlaStatus === 'Breached' ||
+    c.resolutionSlaStatus === 'Breached'
+  );
   const totalEscalated = escalatedTickets.length;
-  const autoEscalated = escalatedTickets.filter(c => c.isAutoEscalated).length;
+  const autoEscalated = escalatedTickets.filter(c => 
+    c.isAutoEscalated || 
+    (c.totalBreachCount || 0) > 0 ||
+    c.responseSlaStatus === 'Breached' ||
+    c.resolutionSlaStatus === 'Breached'
+  ).length;
   const manualEscalated = totalEscalated - autoEscalated;
   
   // SLA Compliance Rate: Percentage of tickets that did NOT require auto-escalation

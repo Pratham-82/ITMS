@@ -724,4 +724,63 @@
   max-width: 140px;
 }
 
+/* Dashboard Navigation Tabs */
+.db-tabs-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  align-items: center;
+}
+
+.db-tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease-in-out;
+  backdrop-filter: blur(8px);
+}
+
+.db-tab-button:hover {
+  background: rgba(99, 102, 241, 0.05);
+  color: var(--text-primary);
+  border-color: rgba(99, 102, 241, 0.2);
+  transform: translateY(-1px);
+}
+
+.db-tab-button.active {
+  background: var(--accent-gradient);
+  color: white !important;
+  font-weight: 700;
+  border-color: transparent;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.db-tab-button.active .db-tab-icon {
+  color: white;
+}
+
+.db-tab-icon {
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.db-tab-button:hover .db-tab-icon {
+  color: var(--accent-color);
+}
+
+.db-tab-button.active:hover .db-tab-icon {
+  color: white;
+}
+
+
 

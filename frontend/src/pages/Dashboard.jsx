@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import '../styles/Dashboard.css';
+import EscalationAnalytics from './EscalationAnalytics';
+import CsatAnalytics from './CsatAnalytics';
 import * as LucideIcons from 'lucide-react';
 import { 
   FileText, 
@@ -1741,6 +1743,7 @@ const AdminDashboard = ({
   const [editingWidget, setEditingWidget] = useState(null);
   const [showLibraryModal, setShowLibraryModal] = useState(false);
   const [selectedComplaintsFilter, setSelectedComplaintsFilter] = useState(null);
+  const [currentTab, setCurrentTab] = useState('overview'); // 'overview', 'sla', 'csat'
 
   // Saved Widgets
   const savedWidgets = useMemo(() => {
@@ -1752,6 +1755,10 @@ const AdminDashboard = ({
   const [usersList, setUsersList] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [departments, setDepartments] = useState([]);
+  
+  const { start, end } = useMemo(() => {
+    return getDateRange(dateRangeFilter, startDateFilter, endDateFilter);
+  }, [dateRangeFilter, startDateFilter, endDateFilter]);
   
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -2233,86 +2240,79 @@ const AdminDashboard = ({
 
   return (
     <div className="db-container">
-      {groupStats && (
-        <div className="group-stats-section" style={{ marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Users size={16} className="text-accent" />
-            <span>My Group's Performance Statistics</span>
-          </h3>
-          <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div className="stat-icon-wrapper" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-color)', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <FileText size={22} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{groupStats.total}</span>
-                <span className="stat-label" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Total Group Complaints</span>
-              </div>
-            </div>
+      {/* Tabs for Dashboard sections */}
+      <div className="db-tabs-container">
+        <button 
+          onClick={() => setCurrentTab('overview')} 
+          className={`db-tab-button ${currentTab === 'overview' ? 'active' : ''}`}
+        >
+          <LayoutGrid size={16} className="db-tab-icon" />
+          <span>Performance Dashboard</span>
+        </button>
+        
+        <button 
+          onClick={() => setCurrentTab('sla')} 
+          className={`db-tab-button ${currentTab === 'sla' ? 'active' : ''}`}
+        >
+          <TrendingUp size={16} className="db-tab-icon" />
+          <span>SLA Analytics</span>
+        </button>
+        
+        <button 
+          onClick={() => setCurrentTab('csat')} 
+          className={`db-tab-button ${currentTab === 'csat' ? 'active' : ''}`}
+        >
+          <LucideIcons.Smile size={16} className="db-tab-icon" />
+          <span>CSAT Feedback</span>
+        </button>
+      </div>
 
-            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div className="stat-icon-wrapper" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Clock size={22} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{groupStats.active + groupStats.pending}</span>
-                <span className="stat-label" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Group In Progress</span>
-              </div>
-            </div>
-
-            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CheckCircle size={22} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{groupStats.resolved}</span>
-                <span className="stat-label" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Group Resolved</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Dashboard Control Toolbar */}
+      {/* Global Dashboard Control Toolbar */}
       <div className="db-customizer-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            onClick={() => setShowCustomizer(!showCustomizer)} 
-            className="btn btn-secondary db-customizer-btn"
-          >
-            <Layout size={15} />
-            <span>Customize Dashboard</span>
-          </button>
-
-          {showCustomizer && (
+          {currentTab === 'overview' ? (
             <>
               <button 
-                onClick={() => { setEditingWidget(null); setShowWidgetModal(true); }} 
-                className="btn btn-primary db-customizer-btn"
-                style={{ background: 'var(--accent-color)', color: 'white' }}
+                onClick={() => setShowCustomizer(!showCustomizer)} 
+                className="btn btn-secondary db-customizer-btn"
               >
-                <Plus size={15} />
-                <span>Add Custom Widget</span>
+                <Layout size={15} />
+                <span>Customize Dashboard</span>
               </button>
 
-              <button 
-                onClick={() => setShowLibraryModal(true)} 
-                className="btn btn-secondary db-customizer-btn"
-                style={{ border: '1px solid var(--accent-color)', color: 'var(--accent-color)', background: 'transparent' }}
-              >
-                <LucideIcons.Bookmark size={15} style={{ marginRight: '6px' }} />
-                <span>Add from Library</span>
-              </button>
+              {showCustomizer && (
+                <>
+                  <button 
+                    onClick={() => { setEditingWidget(null); setShowWidgetModal(true); }} 
+                    className="btn btn-primary db-customizer-btn"
+                    style={{ background: 'var(--accent-color)', color: 'white' }}
+                  >
+                    <Plus size={15} />
+                    <span>Add Custom Widget</span>
+                  </button>
 
-              <button 
-                onClick={handleResetDashboard} 
-                className="btn btn-secondary db-customizer-btn"
-                style={{ borderStyle: 'dashed' }}
-              >
-                <RefreshCw size={15} />
-                <span>Reset to Defaults</span>
-              </button>
+                  <button 
+                    onClick={() => setShowLibraryModal(true)} 
+                    className="btn btn-secondary db-customizer-btn"
+                    style={{ border: '1px solid var(--accent-color)', color: 'var(--accent-color)', background: 'transparent' }}
+                  >
+                    <LucideIcons.Bookmark size={15} style={{ marginRight: '6px' }} />
+                    <span>Add from Library</span>
+                  </button>
+
+                  <button 
+                    onClick={handleResetDashboard} 
+                    className="btn btn-secondary db-customizer-btn"
+                    style={{ borderStyle: 'dashed' }}
+                  >
+                    <RefreshCw size={15} />
+                    <span>Reset to Defaults</span>
+                  </button>
+                </>
+              )}
             </>
+          ) : (
+            <div />
           )}
         </div>
         
@@ -2358,6 +2358,48 @@ const AdminDashboard = ({
         </div>
       </div>
 
+      {currentTab === 'overview' && (
+        <>
+          {groupStats && (
+        <div className="group-stats-section" style={{ marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Users size={16} className="text-accent" />
+            <span>My Group's Performance Statistics</span>
+          </h3>
+          <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="stat-icon-wrapper" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-color)', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FileText size={22} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{groupStats.total}</span>
+                <span className="stat-label" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Total Group Complaints</span>
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="stat-icon-wrapper" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Clock size={22} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{groupStats.active + groupStats.pending}</span>
+                <span className="stat-label" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Group In Progress</span>
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle size={22} />
+              </div>
+              <div className="stat-info">
+                <span className="stat-value" style={{ display: 'block', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{groupStats.resolved}</span>
+                <span className="stat-label" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Group Resolved</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {showCustomizer && (
         <div className="dashboard-panel db-customizer-panel" style={{ padding: '16px 20px', marginBottom: '24px' }}>
           <h3 className="db-customizer-title" style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>Customizer Mode Activated</h3>
@@ -2575,6 +2617,23 @@ const AdminDashboard = ({
               </div>
             ))}
           </div>
+        </div>
+      )}
+        </>
+      )}
+
+      {currentTab === 'sla' && (
+        <div className="sla-tab-content" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+          <EscalationAnalytics complaints={complaints} />
+        </div>
+      )}
+
+      {currentTab === 'csat' && (
+        <div className="csat-tab-content" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+          <CsatAnalytics 
+            startDate={start ? start.toISOString() : ''} 
+            endDate={end ? end.toISOString() : ''} 
+          />
         </div>
       )}
 

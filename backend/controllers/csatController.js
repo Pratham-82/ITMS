@@ -2,6 +2,17 @@ const Complaint = require('../models/Ticket');
 const Department = require('../models/Department');
 const Settings = require('../models/Settings');
 
+// Helper to filter by date range query parameters
+const getDateFilter = (req) => {
+  const filter = {};
+  if (req.query.startDate || req.query.endDate) {
+    filter.createdAt = {};
+    if (req.query.startDate) filter.createdAt.$gte = new Date(req.query.startDate);
+    if (req.query.endDate) filter.createdAt.$lte = new Date(req.query.endDate);
+  }
+  return filter;
+};
+
 // Helper to calculate CSAT metrics from a set of complaints
 const calculateCsatMetrics = (complaints, activeQuestions = []) => {
   const feedbackComplaints = complaints.filter(c => c.feedbackSubmitted && c.feedback);
@@ -128,11 +139,12 @@ const getCsatDashboard = async (req, res) => {
   try {
     const settings = await Settings.findOne({ key: 'system_branding' });
     const activeQuestions = settings?.feedbackQuestions || [];
-    const complaints = await Complaint.find({});
+    const dateFilter = getDateFilter(req);
+    const complaints = await Complaint.find(dateFilter);
     const globalMetrics = calculateCsatMetrics(complaints, activeQuestions);
 
     // Get 5 most recent feedback entries
-    const recentFeedbackRaw = await Complaint.find({ feedbackSubmitted: true })
+    const recentFeedbackRaw = await Complaint.find({ feedbackSubmitted: true, ...dateFilter })
       .populate('citizen', 'name email')
       .sort({ 'feedback.submittedAt': -1 })
       .limit(5);
@@ -150,7 +162,8 @@ const getCsatDashboard = async (req, res) => {
     // Get negative feedback alerts (overallRating <= 2)
     const negativeFeedbackRaw = await Complaint.find({ 
       feedbackSubmitted: true, 
-      'feedback.overallRating': { $lte: 2 } 
+      'feedback.overallRating': { $lte: 2 },
+      ...dateFilter
     })
       .populate('citizen', 'name email')
       .sort({ 'feedback.submittedAt': -1 })
@@ -227,7 +240,8 @@ const getDepartmentCsat = async (req, res) => {
           { id: 'resolutionQualityRating', label: 'Resolution Quality' }
         ];
 
-    const complaints = await Complaint.find({});
+    const dateFilter = getDateFilter(req);
+    const complaints = await Complaint.find(dateFilter);
     const departments = await Department.find({ isActive: true });
 
     const departmentStats = departments.map(dept => {
@@ -323,7 +337,8 @@ const getDepartmentCsat = async (req, res) => {
 // @access  Private (Admin only)
 const getCategoryCsat = async (req, res) => {
   try {
-    const complaints = await Complaint.find({});
+    const dateFilter = getDateFilter(req);
+    const complaints = await Complaint.find(dateFilter);
     
     // Group complaints by categoryName
     const categoryGroups = {};
@@ -395,10 +410,12 @@ const getCategoryCsat = async (req, res) => {
 // @access  Private (Admin only)
 const getCsatReports = async (req, res) => {
   try {
+    const dateFilter = getDateFilter(req);
     // 1. Low Satisfaction Complaints Report (overallRating <= 2)
     const lowSatisfactionComplaints = await Complaint.find({
       feedbackSubmitted: true,
-      'feedback.overallRating': { $lte: 2 }
+      'feedback.overallRating': { $lte: 2 },
+      ...dateFilter
     })
       .populate('citizen', 'name email')
       .sort({ 'feedback.submittedAt': -1 });
@@ -415,7 +432,8 @@ const getCsatReports = async (req, res) => {
 
     // 2. Complaints Reopened After Resolution Report
     const reopenedComplaints = await Complaint.find({
-      reopenedCount: { $gt: 0 }
+      reopenedCount: { $gt: 0 },
+      ...dateFilter
     })
       .populate('citizen', 'name email')
       .sort({ reopenedAt: -1 });
@@ -432,7 +450,7 @@ const getCsatReports = async (req, res) => {
     }));
 
     // 3. Monthly Satisfaction Trends Report
-    const complaints = await Complaint.find({});
+    const complaints = await Complaint.find(dateFilter);
     const feedbackList = complaints.filter(c => c.feedbackSubmitted && c.feedback);
     const monthlyReport = [];
     const now = new Date();

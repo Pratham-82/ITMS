@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import '../styles/CsatAnalytics.css';
 
-const CsatAnalytics = () => {
+const CsatAnalytics = ({ startDate, endDate }) => {
   const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
@@ -39,20 +39,25 @@ const CsatAnalytics = () => {
       setLoading(true);
       const headers = { Authorization: `Bearer ${user.token}` };
 
+      const params = [];
+      if (startDate) params.push(`startDate=${startDate}`);
+      if (endDate) params.push(`endDate=${endDate}`);
+      const queryStr = params.length > 0 ? `?${params.join('&')}` : '';
+
       // 1. Dashboard
-      const dashRes = await fetch('/api/csat/dashboard', { headers });
+      const dashRes = await fetch(`/api/csat/dashboard${queryStr}`, { headers });
       const dashResult = await dashRes.json();
       
       // 2. Departments
-      const deptRes = await fetch('/api/csat/departments', { headers });
+      const deptRes = await fetch(`/api/csat/departments${queryStr}`, { headers });
       const deptResult = await deptRes.json();
 
       // 3. Categories
-      const catRes = await fetch('/api/csat/categories', { headers });
+      const catRes = await fetch(`/api/csat/categories${queryStr}`, { headers });
       const catResult = await catRes.json();
 
       // 4. Reports
-      const repRes = await fetch('/api/csat/reports', { headers });
+      const repRes = await fetch(`/api/csat/reports${queryStr}`, { headers });
       const repResult = await repRes.json();
 
       if (dashResult.success && deptResult.success && catResult.success && repResult.success) {
@@ -75,7 +80,7 @@ const CsatAnalytics = () => {
     if (user?.token) {
       fetchCsatData();
     }
-  }, [user]);
+  }, [user, startDate, endDate]);
 
   const renderStars = (rating) => {
     const starCount = Math.round(rating || 0);

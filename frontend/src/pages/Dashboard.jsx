@@ -192,6 +192,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [citizenAssets, setCitizenAssets] = useState([]);
   const [groupStats, setGroupStats] = useState(null);
+  const [groupComplaints, setGroupComplaints] = useState([]);
   
   // Date filters
   const [dateRangeFilter, setDateRangeFilter] = useState('all');
@@ -286,6 +287,7 @@ const Dashboard = () => {
           resolved: gc.filter(c => ['Resolved', 'Awaiting Feedback', 'Closed'].includes(c.status)).length,
           rejected: gc.filter(c => c.status === 'Rejected').length,
         });
+        setGroupComplaints(gc);
       }
     } catch (err) {
       console.error('Error fetching group stats:', err);
@@ -371,6 +373,19 @@ const Dashboard = () => {
     }
   }, [user, dateRangeFilter, startDateFilter, endDateFilter]);
 
+  useEffect(() => {
+    if (isSuperAdmin && complaints && complaints.length > 0) {
+      setGroupComplaints(complaints);
+      setGroupStats({
+        total: complaints.length,
+        pending: complaints.filter(c => c.status === 'Pending').length,
+        active: complaints.filter(c => ['Investigating', 'Assigned', 'Escalated', 'Reopen Requested', 'On Hold'].includes(c.status)).length,
+        resolved: complaints.filter(c => ['Resolved', 'Awaiting Feedback', 'Closed'].includes(c.status)).length,
+        rejected: complaints.filter(c => c.status === 'Rejected').length,
+      });
+    }
+  }, [complaints, isSuperAdmin]);
+
   const handleSaveConfig = async (newConfig, quiet = false) => {
     try {
       const response = await fetch('/api/auth/dashboard-config', {
@@ -435,6 +450,8 @@ const Dashboard = () => {
       categories={categories}
       stats={stats}
       groupStats={groupStats}
+      groupComplaints={groupComplaints}
+      isSuperAdmin={isSuperAdmin}
       dateRangeFilter={dateRangeFilter}
       setDateRangeFilter={handleDateRangeChange}
       startDateFilter={startDateFilter}
@@ -1714,6 +1731,397 @@ const WidgetCardContainer = React.memo(({
 });
 
 // ==========================================
+// ESCALATION GROUP MONITOR / ANALYTICS
+// ==========================================
+const GroupAnalytics = ({
+  groupComplaints,
+  groupStaffWorkloads,
+  groupWorkloadAlerts,
+  loadingGroupWorkload,
+  availableGroups,
+  selectedGroupId,
+  setSelectedGroupId,
+  categories,
+  navigate
+}) => {
+  // Filter complaints by selected group
+  const selectedGroupTickets = useMemo(() => {
+    if (!selectedGroupId) return [];
+    return groupComplaints.filter(c => {
+      const gId = c.assignedGroup?._id || c.assignedGroup;
+      return gId && gId.toString() === selectedGroupId.toString();
+    });
+  }, [groupComplaints, selectedGroupId]);
+
+  // Compute metrics
+  const total = selectedGroupTickets.length;
+  const pending = selectedGroupTickets.filter(c => c.status === 'Pending').length;
+  const active = selectedGroupTickets.filter(c => ['Investigating', 'Assigned', 'Escalated', 'Reopen Requested', 'On Hold'].includes(c.status)).length;
+  const resolved = selectedGroupTickets.filter(c => ['Resolved', 'Awaiting Feedback', 'Closed'].includes(c.status)).length;
+  
+  const autoEscalatedCount = selectedGroupTickets.filter(c => 
+    c.isAutoEscalated || 
+    (c.totalBreachCount || 0) > 0 ||
+    c.responseSlaStatus === 'Breached' ||
+    c.resolutionSlaStatus === 'Breached'
+  ).length;
+
+  const complianceRate = total > 0 
+    ? (((total - autoEscalatedCount) / total) * 100).toFixed(1)
+    : '100';
+
+  // Doughnut Chart: Status
+  const statusCounts = { Pending: 0, Investigating: 0, Resolved: 0, Closed: 0, Rejected: 0 };
+  selectedGroupTickets.forEach(t => {
+    if (statusCounts[t.status] !== undefined) {
+      statusCounts[t.status]++;
+    }
+  });
+
+  const statusLabels = Object.keys(statusCounts).filter(k => statusCounts[k] > 0);
+  const statusData = statusLabels.map(k => statusCounts[k]);
+
+  const statusChartData = {
+    labels: statusLabels,
+    datasets: [{
+      data: statusData,
+      backgroundColor: [
+        'rgba(245, 158, 11, 0.65)',  // Pending
+        'rgba(99, 102, 241, 0.65)',  // Investigating
+        'rgba(16, 185, 129, 0.65)',  // Resolved
+        'rgba(6, 182, 212, 0.65)',   // Closed
+        'rgba(239, 68, 68, 0.65)'    // Rejected
+      ].slice(0, statusLabels.length),
+      borderColor: 'var(--border-color)',
+      borderWidth: 1.5
+    }]
+  };
+
+  // Bar Chart: Category
+  const categoryCounts = {};
+  selectedGroupTickets.forEach(t => {
+    const catName = t.category?.name || 'General';
+    categoryCounts[catName] = (categoryCounts[catName] || 0) + 1;
+  });
+
+  const categoryLabels = Object.keys(categoryCounts);
+  const categoryData = Object.values(categoryCounts);
+
+  const categoryChartData = {
+    labels: categoryLabels,
+    datasets: [{
+      label: 'Group Complaints',
+      data: categoryData,
+      backgroundColor: 'rgba(99, 102, 241, 0.65)',
+      borderColor: 'var(--accent-color)',
+      borderWidth: 1.5,
+      borderRadius: 6
+    }]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: {
+          color: 'var(--text-secondary)',
+          font: { size: 11 }
+        }
+      }
+    }
+  };
+
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      x: { ticks: { color: 'var(--text-secondary)', font: { size: 10 } } },
+      y: { ticks: { color: 'var(--text-secondary)', font: { size: 10 } } }
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Selector and Subtitle */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', background: 'var(--bg-card)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>Escalation Group Monitor</h3>
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>View real-time workloads and complaint processing speeds for support groups.</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Select Group:</span>
+          <select
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            {availableGroups.length === 0 ? (
+              <option value="">No Groups Assigned</option>
+            ) : (
+              availableGroups.map(g => (
+                <option key={g._id || g} value={g._id || g}>{g.name || 'Support Group'}</option>
+              ))
+            )}
+          </select>
+        </div>
+      </div>
+
+      {availableGroups.length === 0 ? (
+        <div style={{ padding: '60px 0', textAlign: 'center', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+          <LucideIcons.ShieldAlert size={48} style={{ color: '#f59e0b', marginBottom: '12px' }} />
+          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>No Support Group Assigned</h4>
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>You are not registered in any support or escalation groups.</p>
+        </div>
+      ) : (
+        <>
+          {/* Metrics Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '10px', backgroundColor: 'rgba(99, 102, 241, 0.1)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--accent-color)' }}>
+                <LucideIcons.FileText size={22} />
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Group Tickets</span>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0 0 0' }}>{total}</h3>
+              </div>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '10px', backgroundColor: 'rgba(245, 158, 11, 0.1)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#f59e0b' }}>
+                <LucideIcons.Clock size={22} />
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Pending Tickets</span>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0 0 0' }}>{pending}</h3>
+              </div>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '10px', backgroundColor: 'rgba(6, 182, 212, 0.1)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4' }}>
+                <LucideIcons.TrendingUp size={22} />
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>In Progress</span>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0 0 0' }}>{active}</h3>
+              </div>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#10b981' }}>
+                <LucideIcons.CheckCircle size={22} />
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Resolved Tickets</span>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0 0 0' }}>{resolved}</h3>
+              </div>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#10b981' }}>
+                <LucideIcons.CheckCircle size={22} />
+              </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>SLA Compliance</span>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0 0 0' }}>{complianceRate}%</h3>
+              </div>
+            </div>
+          </div>
+
+          {/* Charts Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+            <div style={{ padding: '20px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <LucideIcons.Layers size={16} className="text-accent" />
+                <span>Group Status Distribution</span>
+              </h4>
+              <div style={{ height: '220px', position: 'relative' }}>
+                {statusLabels.length === 0 ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-secondary)', fontSize: '12px' }}>No Data Available</div>
+                ) : (
+                  <Doughnut data={statusChartData} options={chartOptions} />
+                )}
+              </div>
+            </div>
+
+            <div style={{ padding: '20px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <LucideIcons.BarChart3 size={16} className="text-accent" />
+                <span>Group Tickets by Category</span>
+              </h4>
+              <div style={{ height: '220px', position: 'relative' }}>
+                {categoryLabels.length === 0 ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-secondary)', fontSize: '12px' }}>No Data Available</div>
+                ) : (
+                  <Bar data={categoryChartData} options={barChartOptions} />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Active Workload Alerts in Group */}
+          {groupWorkloadAlerts.length > 0 && (
+            <div style={{ padding: '16px 20px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.03)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 800, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <LucideIcons.AlertTriangle size={16} />
+                <span>Group Workload Alerts</span>
+              </h4>
+              <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {groupWorkloadAlerts.map((alert, idx) => (
+                  <li key={idx}><strong>{alert.officerName || 'Staff'}</strong>: {alert.message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Group Staff List (Workload and Availability) */}
+          <div style={{ padding: '20px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <LucideIcons.Users size={16} className="text-accent" />
+              <span>Officer Workload & Real-time Availability</span>
+            </h4>
+            {loadingGroupWorkload ? (
+              <div style={{ padding: '30px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>Loading group team workloads...</div>
+            ) : groupStaffWorkloads.length === 0 ? (
+              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>No staff members registered in this group.</div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table-widget-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Officer Name</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Workload Score</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Active Tickets</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Capacity Utilization</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Availability Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {groupStaffWorkloads.map(s => {
+                      const utilPercent = s.maxCapacity > 0 ? Math.min(Math.round((s.workloadScore / s.maxCapacity) * 100), 100) : 0;
+                      let utilColor = '#10b981'; // Green
+                      if (utilPercent > 80) utilColor = '#ef4444'; // Red
+                      else if (utilPercent > 50) utilColor = '#f59e0b'; // Yellow
+
+                      return (
+                        <tr key={s._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                          <td style={{ padding: '12px 8px', fontWeight: 650, color: 'var(--text-primary)' }}>{s.name}</td>
+                          <td style={{ padding: '12px 8px', fontWeight: 700 }}>{s.workloadScore} pts</td>
+                          <td style={{ padding: '12px 8px' }}>{s.openCount || 0} open</td>
+                          <td style={{ padding: '12px 8px', width: '30%' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ flex: 1, height: '6px', background: 'var(--bg-secondary)', borderRadius: '3px', overflow: 'hidden' }}>
+                                <div style={{ width: `${utilPercent}%`, height: '100%', background: utilColor, borderRadius: '3px' }}></div>
+                              </div>
+                              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', minWidth: '30px' }}>{utilPercent}%</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '12px 8px' }}>
+                            <span className="badge" style={{
+                              backgroundColor: s.availabilityStatus === 'Available' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                              color: s.availabilityStatus === 'Available' ? '#10b981' : '#ef4444',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              fontWeight: 600
+                            }}>{s.availabilityStatus}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Recent Group Tickets Table */}
+          <div style={{ padding: '20px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <LucideIcons.Inbox size={16} className="text-accent" />
+              <span>Recent Group Tickets Queue</span>
+            </h4>
+            {selectedGroupTickets.length === 0 ? (
+              <div style={{ padding: '30px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>No complaints found in this support group.</div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table-widget-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Ticket ID</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Title</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Category</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Priority</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Status</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>Assigned To</th>
+                      <th style={{ padding: '10px 8px', color: 'var(--text-secondary)' }}>SLA Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedGroupTickets.slice(0, 10).map(t => {
+                      const slaBreached = t.responseSlaStatus === 'Breached' || t.resolutionSlaStatus === 'Breached';
+                      const assignedToName = t.assignedTo?.name || (typeof t.assignedTo === 'object' ? t.assignedTo?.name : t.assignedTo) || 'Unassigned';
+                      
+                      let priorityColor = '#3b82f6'; // Low
+                      if (t.priority === 'High' || t.priority === 'Critical') priorityColor = '#ef4444';
+                      else if (t.priority === 'Medium') priorityColor = '#f59e0b';
+
+                      return (
+                        <tr
+                          key={t._id}
+                          onClick={() => navigate(`/complaints/${t._id}`)}
+                          style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer', transition: 'background 0.2s' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <td style={{ padding: '12px 8px', fontWeight: 700, color: 'var(--accent-color)' }}>#{t.complaintId || t._id.substring(18)}</td>
+                          <td style={{ padding: '12px 8px', fontWeight: 600, color: 'var(--text-primary)' }}>{t.title}</td>
+                          <td style={{ padding: '12px 8px' }}>{t.category?.name || 'General'}</td>
+                          <td style={{ padding: '12px 8px' }}>
+                            <span style={{ color: priorityColor, fontWeight: 700 }}>{t.priority}</span>
+                          </td>
+                          <td style={{ padding: '12px 8px' }}>
+                            <span className="badge" style={{
+                              backgroundColor: t.status === 'Resolved' || t.status === 'Closed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(99, 102, 241, 0.1)',
+                              color: t.status === 'Resolved' || t.status === 'Closed' ? '#10b981' : 'var(--accent-color)',
+                              fontWeight: 600
+                            }}>{t.status}</span>
+                          </td>
+                          <td style={{ padding: '12px 8px', color: 'var(--text-muted)' }}>{assignedToName}</td>
+                          <td style={{ padding: '12px 8px' }}>
+                            <span className="badge" style={{
+                              backgroundColor: slaBreached ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                              color: slaBreached ? '#ef4444' : '#10b981',
+                              fontWeight: 600
+                            }}>{slaBreached ? 'Breached' : 'Active/Met'}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ==========================================
 // ADMIN DASHBOARD (CUSTOMIZABLE)
 // ==========================================
 const AdminDashboard = ({ 
@@ -1721,6 +2129,8 @@ const AdminDashboard = ({
   categories,
   stats, 
   groupStats,
+  groupComplaints,
+  isSuperAdmin,
   dateRangeFilter,
   setDateRangeFilter,
   startDateFilter,
@@ -1743,7 +2153,14 @@ const AdminDashboard = ({
   const [editingWidget, setEditingWidget] = useState(null);
   const [showLibraryModal, setShowLibraryModal] = useState(false);
   const [selectedComplaintsFilter, setSelectedComplaintsFilter] = useState(null);
-  const [currentTab, setCurrentTab] = useState('overview'); // 'overview', 'sla', 'csat'
+  const [currentTab, setCurrentTab] = useState('overview'); // 'overview', 'sla', 'csat', 'group'
+
+  // Escalation Groups Tab States
+  const [allGroups, setAllGroups] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [groupStaffWorkloads, setGroupStaffWorkloads] = useState([]);
+  const [groupWorkloadAlerts, setGroupWorkloadAlerts] = useState([]);
+  const [loadingGroupWorkload, setLoadingGroupWorkload] = useState(false);
 
   // Saved Widgets
   const savedWidgets = useMemo(() => {
@@ -1833,6 +2250,40 @@ const AdminDashboard = ({
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      const res = await fetch('/api/groups', {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      const data = await res.json();
+      if (data.success) setAllGroups(data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch groups:', err);
+    }
+  };
+
+  const fetchGroupWorkloadData = async (groupId) => {
+    if (!groupId) return;
+    try {
+      setLoadingGroupWorkload(true);
+      const headers = { Authorization: `Bearer ${user.token}` };
+      const [staffRes, alertsRes] = await Promise.all([
+        fetch(`/api/workload/staff?group=${encodeURIComponent(groupId)}`, { headers }),
+        fetch(`/api/workload/alerts?group=${encodeURIComponent(groupId)}`, { headers })
+      ]);
+      const [staffVal, alertsVal] = await Promise.all([
+        staffRes.json(),
+        alertsRes.json()
+      ]);
+      if (staffVal.success) setGroupStaffWorkloads(staffVal.data || []);
+      if (alertsVal.success) setGroupWorkloadAlerts(alertsVal.data || []);
+    } catch (err) {
+      console.error('Failed to fetch group workload data:', err);
+    } finally {
+      setLoadingGroupWorkload(false);
+    }
+  };
+
   // Determine active widgets configuration
   const activeWidgets = useMemo(() => {
     return config?.widgets && config.widgets.length > 0 ? config.widgets : DEFAULT_WIDGETS;
@@ -1860,6 +2311,36 @@ const AdminDashboard = ({
       fetchServiceRequests();
     }
   }, [activeWidgets, user?.token]);
+
+  // Fetch all groups if super admin
+  useEffect(() => {
+    if (isSuperAdmin && user?.token) {
+      fetchGroups();
+    }
+  }, [isSuperAdmin, user?.token]);
+
+  // Determine available groups for selector
+  const availableGroups = useMemo(() => {
+    if (isSuperAdmin) {
+      return allGroups;
+    } else {
+      return user?.groups || [];
+    }
+  }, [isSuperAdmin, allGroups, user?.groups]);
+
+  // Auto-select first group on load
+  useEffect(() => {
+    if (availableGroups.length > 0 && !selectedGroupId) {
+      setSelectedGroupId(availableGroups[0]._id || availableGroups[0]);
+    }
+  }, [availableGroups, selectedGroupId]);
+
+  // Fetch workload data when selectedGroupId changes
+  useEffect(() => {
+    if (selectedGroupId) {
+      fetchGroupWorkloadData(selectedGroupId);
+    }
+  }, [selectedGroupId]);
 
   // Handle widget actions
   const handleSaveWidget = (updatedWidget, saveToLib = false) => {
@@ -2265,6 +2746,14 @@ const AdminDashboard = ({
           <LucideIcons.Smile size={16} className="db-tab-icon" />
           <span>CSAT Feedback</span>
         </button>
+        
+        <button 
+          onClick={() => setCurrentTab('group')} 
+          className={`db-tab-button ${currentTab === 'group' ? 'active' : ''}`}
+        >
+          <Users size={16} className="db-tab-icon" />
+          <span>Group Stats</span>
+        </button>
       </div>
 
       {/* Global Dashboard Control Toolbar */}
@@ -2645,6 +3134,22 @@ const AdminDashboard = ({
             startDate={start ? start.toISOString() : ''} 
             endDate={end ? end.toISOString() : ''} 
             showCustomizer={showCustomizer}
+          />
+        </div>
+      )}
+
+      {currentTab === 'group' && (
+        <div className="group-tab-content" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+          <GroupAnalytics 
+            groupComplaints={groupComplaints}
+            groupStaffWorkloads={groupStaffWorkloads}
+            groupWorkloadAlerts={groupWorkloadAlerts}
+            loadingGroupWorkload={loadingGroupWorkload}
+            availableGroups={availableGroups}
+            selectedGroupId={selectedGroupId}
+            setSelectedGroupId={setSelectedGroupId}
+            categories={categories}
+            navigate={navigate}
           />
         </div>
       )}

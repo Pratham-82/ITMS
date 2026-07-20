@@ -1070,16 +1070,14 @@ const AssetManagementPage = () => {
                           </button>
                           {user?.role === 'admin' && (
                             <>
-                              {asset.hasTickets && (
-                                <button
-                                  onClick={() => handleEditClick(asset)}
-                                  className="btn btn-icon p-1"
-                                  title="Edit Asset"
-                                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                                >
-                                  <Edit size={15} />
-                                </button>
-                              )}
+                              <button
+                                onClick={() => handleEditClick(asset)}
+                                className="btn btn-icon p-1"
+                                title="Edit Asset"
+                                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                              >
+                                <Edit size={15} />
+                              </button>
                               <button
                                 onClick={() => handleDelete(asset)}
                                 className="btn btn-icon p-1"

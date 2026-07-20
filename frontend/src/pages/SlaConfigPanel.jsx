@@ -400,11 +400,12 @@ const SlaConfigPanel = () => {
     }
   ];
 
-  // Filter complaints to get only staff-related tickets
+  // Filter complaints to get only staff-related tickets assigned to this staff member
   const staffTickets = complaints.filter(c => 
     c.ticketType && 
     c.ticketType.allowedRoles && 
-    !c.ticketType.allowedRoles.includes('citizen')
+    !c.ticketType.allowedRoles.includes('citizen') &&
+    (c.assignedTo === user?._id || c.assignedTo?._id === user?._id)
   );
 
   // 1. SLA Compliance Rate
@@ -567,7 +568,7 @@ const SlaConfigPanel = () => {
               <span className="text-muted d-flex align-items-center gap-2 flex-wrap" style={{ fontSize: '12.5px' }}>
                 <span>ServiceNow-Style Policy Editor. Configuring default policy: <strong>{selectedConfig?.name}</strong></span>
                 <span className="badge bg-info-subtle text-info d-inline-flex align-items-center gap-1" style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                  <ShieldAlert size={12} /> Staff-Related Tickets Only
+                  <ShieldAlert size={12} /> Assigned Staff Tickets Only
                 </span>
               </span>
             </div>

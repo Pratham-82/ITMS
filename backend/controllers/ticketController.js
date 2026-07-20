@@ -243,10 +243,10 @@ const getTicketById = async (req, res) => {
 // @access  Private (Admin only)
 const updateTicketStatus = async (req, res) => {
   try {
-    const { status, assignedTo, escalationType, escalationGroupId } = req.body;
+    const { status, assignedTo, escalationType, escalationGroupId, holdDuration, holdUntilCustom } = req.body;
     const ticket = await TicketService.updateTicketStatus(
       req.params.id, 
-      { status, assignedTo, escalationType, escalationGroupId }, 
+      { status, assignedTo, escalationType, escalationGroupId, holdDuration, holdUntilCustom }, 
       req.user
     );
     res.status(200).json({ success: true, data: ticket });

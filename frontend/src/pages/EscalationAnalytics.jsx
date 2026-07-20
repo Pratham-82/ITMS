@@ -133,17 +133,9 @@ const EscalationAnalytics = ({ complaints: propComplaints, showCustomizer }) => 
     }
   }, [propComplaints, user]);
 
-  // Filter complaints to get only staff-related tickets assigned to this staff member
-  const staffTickets = complaints.filter(c => 
-    c.ticketType && 
-    c.ticketType.allowedRoles && 
-    !c.ticketType.allowedRoles.includes('citizen') &&
-    (c.assignedTo === user?._id || c.assignedTo?._id === user?._id)
-  );
-
   // Aggregate stats in frontend memory
-  const totalTickets = staffTickets.length;
-  const escalatedTickets = staffTickets.filter(c => 
+  const totalTickets = complaints.length;
+  const escalatedTickets = complaints.filter(c => 
     (c.currentEscalationLevel || 0) > 0 || 
     c.isEscalated || 
     c.status === 'Escalated' || 
@@ -285,12 +277,9 @@ const EscalationAnalytics = ({ complaints: propComplaints, showCustomizer }) => 
       {/* Top Header Row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <TrendingUp className="text-accent" size={26} />
             Escalation Engine Analytics
-            <span className="badge bg-info-subtle text-info d-inline-flex align-items-center gap-1" style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '12px', fontWeight: 600 }}>
-              <ShieldAlert size={13} /> Assigned Staff Tickets Only
-            </span>
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px', margin: 0 }}>
             Real-time tracking of SLA breach frequencies, manual overflows, and department distribution.
